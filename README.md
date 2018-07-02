@@ -1,2 +1,2 @@
 # Samples
-Miscellaneous sample application demonstrating working with Rivetz Technology 
+Miscellaneous sample applications demonstrating working with Rivetz Technology 
