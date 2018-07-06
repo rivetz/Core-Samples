@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.rivetz:rivetz-api:0.10.4@jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.rivetz/rivetz-api/0.10.4/79aed72027bb8fb6b6704d6bad4d03c89c8cc91d/rivetz-api-0.10.4.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.rivetz/rivetz-api/0.10.4/53587ffd76cb8357a4a84406d8099daa595d8da1/rivetz-api-0.10.4-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
