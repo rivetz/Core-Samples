@@ -31,21 +31,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
+            onDevicePairing(resultCode);
 
-            if (resultCode == RESULT_CANCELED) {
-                alert("Pairing error: " + String.valueOf(resultCode));
-            }
-            if (resultCode == RESULT_OK) {
-                alert("Paired");
-            }
-        }
-        notLoading();
-
-    }
+    }}
 
     // Creates a Key
     public void createKey(View v) {
         // Create a Key using the Rivet
+    }
+
+    public void onDevicePairing(int resultCode){
+        if (resultCode == RESULT_CANCELED) {
+            alert("Pairing error: " + String.valueOf(resultCode));
+        }
+        if (resultCode == RESULT_OK) {
+            alert("Paired");
+        }
+
+        notLoading();
     }
 
     // Helper functions
