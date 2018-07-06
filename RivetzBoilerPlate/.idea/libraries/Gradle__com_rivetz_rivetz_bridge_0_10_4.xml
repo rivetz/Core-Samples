@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.rivetz:rivetz-bridge-0.10.4">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/rivetz-bridge-0.10.4.aar/f0502ff042dbfa59a77cb54b1b8223da/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-1/files-1.1/rivetz-bridge-0.10.4.aar/f0502ff042dbfa59a77cb54b1b8223da/res" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
