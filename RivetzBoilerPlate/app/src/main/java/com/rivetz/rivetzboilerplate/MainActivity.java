@@ -9,7 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.Rivet;
-import com.rivetz.rivetzboilerplate.Utilities;
+import com.rivetz.api.internal.Utilities;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
             onDevicePairing(resultCode);
-            }
+        }
     }
 
     // Creates a Key
