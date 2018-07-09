@@ -1,4 +1,4 @@
-package com.rivetz.rivetzapp1;
+package com.rivetz.signingsample;
 
 
 import android.app.Activity;
@@ -23,43 +23,30 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
-
-        if (rivet != null) {
-            if (!rivet.isPaired()) {
+        if (!rivet.isPaired()) {
                 rivet.pairDevice(this);
-            }
         }
-
     }
 
-    //checks if the Rivet was successfully paired
+
+    // Checks if the Rivet was successfully paired
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
-
-            if (resultCode == RESULT_CANCELED) {
-                alert("Pairing error: " + String.valueOf(resultCode));
-            }
-            if (resultCode == RESULT_OK) {
-                alert("Paired");
-            }
+            onDevicePairing(resultCode);
         }
         notLoading();
         if (rivet.getKey("SignKey") == null){
             makeUnclickable(findViewById(R.id.sign));
             makeUnclickable(findViewById(R.id.checkAuthenticity));
         }
-
         else{
             makeUnclickable(findViewById(R.id.createKey));
-
         }
-
     }
 
-
-    //signs the real message asynchronously
+    // Signs the real message asynchronously
     public void sign(View v) {
         EditText real = findViewById(R.id.real);
         rivet.signAsync("SignKey",real.getText().toString().getBytes()).whenComplete(this::signComplete);
@@ -67,9 +54,7 @@ public class MainActivity extends AppCompatActivity {
         loading();
     }
 
-
-
-    //callback when the real message is done signing which checks if the signing was successful
+    // Callback when the real message is done signing which checks if the signing was successful
     public void signComplete(byte[] signature, Throwable thrown) {
         if (signature != null) {
             runOnUiThread(() -> realmessage = signature);
@@ -83,10 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
-
-    //verifies if the real message is authentic asynchronously using its signature
+    // Verifies if the real message is authentic asynchronously using its signature
     public void checkAuthenticity(View v){
         EditText real = findViewById(R.id.real);
         if(realmessage == null){
@@ -96,12 +78,9 @@ public class MainActivity extends AppCompatActivity {
             rivet.verifyAsync("SignKey",realmessage,real.getText().toString().getBytes()).whenComplete(this::verifyComplete);
             loading();
         }
-
     }
 
-
-
-    //callback for when the verification is done which checks if the message is authentic or not and returns an alert accordingly
+    // Callback for when the verification is done which checks if the message is authentic or not and returns an alert accordingly
     public void verifyComplete(Boolean validity, Throwable thrown){
         if(validity != null){
             if(validity){
@@ -116,11 +95,9 @@ public class MainActivity extends AppCompatActivity {
 
         notLoading();
 
-        }
+    }
 
-
-
-    //creates a Key
+    // Creates a Key
     public void createKey(View v) {
 
         try {
@@ -132,58 +109,45 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //Helper functions
+    public void onDevicePairing(int resultCode){
+        if (resultCode == RESULT_CANCELED) {
+            alert("Pairing error: " + String.valueOf(resultCode));
+        }
+        if (resultCode == RESULT_OK) {
+            alert("Paired");
+        }
 
+        notLoading();
+    }
 
-    //creates an alert with some text
+    // Helper functions
+
+    // Creates an alert with some text
     public void alert(String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
-    //makes a button unclickable
+    // Makes a button unclickable
     public void makeUnclickable(Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    //makes a button clickable
+    // Makes a button clickable
     public void makeClickable(Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }
 
-    //shows a loading animation
+    // Shows a loading animation
     public void loading(){
         findViewById(R.id.loading).setVisibility(View.VISIBLE);
     }
 
-    //makes the loading animation invisible
+    // Makes the loading animation invisible
     public void notLoading(){
         findViewById(R.id.loading).setVisibility(View.GONE);
     }
-
-
-    //converts a byte array to hexadecimals
-    public static String bytesToHex(byte[] bytes) {
-        final char[] hexArray = "0123456789ABCDEF".toCharArray();
-        char[] hexChars = new char[bytes.length * 2];
-
-        for ( int j = 0; j < bytes.length; j++ ) {
-
-            int v = bytes[j] & 0xFF;
-
-            hexChars[j * 2] = hexArray[v >>> 4];
-
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-
-        }
-
-
-        return new String(hexChars);
-
-    }
-
-
 }
