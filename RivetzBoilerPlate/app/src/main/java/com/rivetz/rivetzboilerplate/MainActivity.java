@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.Rivet;
+import com.rivetz.rivetzboilerplate.Utilities;
+
 
 public class MainActivity extends AppCompatActivity {
     Rivet rivet;
@@ -20,10 +22,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
 
-            if (!rivet.isPaired()) {
-                rivet.pairDevice(this);
-            }
-
+        if (!rivet.isPaired()) {
+            rivet.pairDevice(this);
+        }
     }
 
     // Checks if the Rivet was successfully paired
@@ -32,8 +33,8 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
             onDevicePairing(resultCode);
-
-    }}
+            }
+    }
 
     // Creates a Key
     public void createKey(View v) {
@@ -80,18 +81,5 @@ public class MainActivity extends AppCompatActivity {
     // Makes the loading animation invisible
     public void notLoading(){
         findViewById(R.id.loading).setVisibility(View.GONE);
-    }
-
-
-    // Converts a byte array to hexadecimals
-    public static String bytesToHex(byte[] bytes) {
-        final char[] hexArray = "0123456789ABCDEF".toCharArray();
-        char[] hexChars = new char[bytes.length * 2];
-        for ( int j = 0; j < bytes.length; j++ ) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
     }
 }
