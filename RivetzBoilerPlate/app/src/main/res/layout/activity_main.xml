@@ -1,0 +1,73 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/createkey"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:onClick="createKey"
+            android:text="Create key" />
+
+        <Button
+            android:id="@+id/someButton1"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:layout_marginTop="60dp"
+            android:text="Some Text" />
+
+        <Button
+            android:id="@+id/someButton2"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:layout_marginTop="120dp"
+            android:onClick="reproduceBug"
+            android:text="Bug Text" />
+
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/someField1"
+        android:imeOptions="actionDone"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
+        android:ems="10"
+        android:text="Some Text" />
+
+    <EditText
+        android:id="@+id/someField2"
+        android:imeOptions="actionDone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
+        android:isScrollContainer="false"
+        android:keepScreenOn="false"
+        android:minWidth="240dp"
+        android:text="Some Text" />
+
+    <ProgressBar
+        android:id="@+id/loading"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:indeterminate="true" />
+
+</LinearLayout>
