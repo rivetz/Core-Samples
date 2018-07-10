@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
     Rivet rivet;
     byte[] realmessage;
 
-    //creates and pairs a Rivet if necessary
+    // Creates and pairs a Rivet if necessary
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
