@@ -1,0 +1,55 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/hash"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:layout_marginTop="120dp"
+            android:onClick="hash"
+            android:text="Hash" />
+
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/dataForHash"
+        android:imeOptions="actionDone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="10dp"
+        android:isScrollContainer="false"
+        android:keepScreenOn="false"
+        android:minWidth="240dp"
+        android:text="Data to be hashed" />
+
+    <TextView
+        android:id="@+id/testvectors"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="50dp"
+        android:isScrollContainer="false"
+        android:keepScreenOn="false"
+        android:minWidth="240dp"
+        android:text="Try the word 'Rivetz'. Its hash should be 24D3068BC52DD64D18A12E950AD7AB763FEA7CE086C50C8A1967AE0393BD8C7D" />
+
+    <ProgressBar
+        android:id="@+id/loading"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:indeterminate="true" />
+
+</LinearLayout>

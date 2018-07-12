@@ -1,4 +1,4 @@
-package com.rivetz.rivetzsample6;
+package com.rivetz.rivetsample5;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -7,21 +7,19 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
-
 import com.rivetz.api.KeyRecord;
 import com.rivetz.api.RivetInterface;
 import com.rivetz.api.SPID;
-import com.rivetz.bridge.Rivet;
 import com.rivetz.api.internal.Utilities;
+import com.rivetz.bridge.Rivet;
 
+import org.slf4j.helpers.Util;
+
+import java.security.Key;
 import java.util.Optional;
-
 
 public class MainActivity extends AppCompatActivity {
     Rivet rivet;
-    String keyName;
-    RivetInterface.UsageRule usageRule;
 
     // Creates and pairs a Rivet if necessary
     @Override
@@ -44,44 +42,65 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Creates/Sets the TUI Pin Key
-    public void createKeyConfirm(View v){
-        keyName = "ConfirmKey";
-        usageRule = RivetInterface.UsageRule.REQUIRE_TUI_CONFIRM;
-        loading();
-        rivet.getKeyAsync(keyName).whenComplete(this::verifyExistenceComplete);
-    }
-
-    // Creates/Sets the TUI Pin Key
-    public void createKeyPin(View v) {
-        keyName = "PinKey";
-        usageRule = RivetInterface.UsageRule.REQUIRE_TUI_PIN;
-        loading();
-        rivet.getKeyAsync(keyName).whenComplete(this::verifyExistenceComplete);
-    }
-
-    // Callback for when verification of the keys existence is complete
-    public void verifyExistenceComplete(Optional<KeyRecord> key, Throwable thown){
-        if(key.isPresent()){
-            runOnUiThread(() -> notLoading());
+    // Creates a Key asynchronously
+    public void createKey(View v) {
+        try {
+            loading();
+            rivet.createKeyAsync(RivetInterface.KeyType.ECDSA_NISTP256, "MyKey", RivetInterface.UsageRule.PRIV_KEY_EXPORTABLE).whenComplete(this::createKeyComplete);
         }
-        // If the requested Key does not exist yet, it is created here
-        else {
-            try {
-                rivet.createKeyAsync(RivetInterface.KeyType.ECDSA_NISTP256, keyName, usageRule).whenComplete(this::createKeyComplete);
-            }
-            catch (Exception e){
-                runOnUiThread(() -> alert(e.getMessage()));
-            }
+        catch (Exception e){
+            alert(e.getMessage());
         }
     }
 
     // Callback when the key is done creating
     public void createKeyComplete(KeyRecord key, Throwable thrown){
-        if(thrown != null){
+        if(thrown == null){
+            runOnUiThread(() -> alert("Key successfully created"));
+        }
+        else {
             runOnUiThread(() -> alert(thrown.getMessage()));
         }
         runOnUiThread(() -> notLoading());
+    }
+
+    // Deletes a key asynchronously
+    public void deleteKey(View v) {
+        loading();
+        try {
+            rivet.deleteKeyAsync("MyKey").whenComplete(this::deleteKeyComplete);
+        } catch (Exception e) {
+            alert(e.getMessage());
+        }
+    }
+
+    // Callback when the key is done deleting
+    public void deleteKeyComplete(Void v, Throwable thrown){
+        if(thrown == null){
+            runOnUiThread(() ->alert("Key successfully deleted"));
+        }
+        else {
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+        notLoading();
+    }
+
+    // Gets the KeyRecord for the Key asynchronously
+    public void export(View v){
+        rivet.getKeyAsync("MyKey").whenComplete(this::exportComplete);
+        loading();
+    }
+
+    // Callback for when the export function is complete which returns the Public Key and Private Key
+    public void exportComplete(Optional<KeyRecord> key, Throwable thrown){
+        if(thrown == null){
+            if(key.isPresent()) {
+                runOnUiThread(() -> alert("Your public key is: " +Utilities.bytesToHex(key.get().getPublicKeyBytes())));
+                runOnUiThread(() -> alert("Your private key is: " +Utilities.bytesToHex(key.get().privateKey)));
+            }
+            else runOnUiThread(() -> alert("Key not found"));
+        }
+        runOnUiThread(()->notLoading());
     }
 
     public void onDevicePairing(int resultCode){
@@ -93,24 +112,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         notLoading();
-    }
-
-    //Encrypts the text in the box asynchronously
-    public void encrypt(View v){
-        loading();
-        EditText textToEncrypt = findViewById(R.id.encryptText);
-        rivet.encryptAsync(keyName,textToEncrypt.getText().toString().getBytes()).whenComplete(this::encryptComplete);
-    }
-
-    // Callback for when encryption is complete
-    public void encryptComplete(byte[] encrypted, Throwable thrown){
-        if(thrown == null){
-           runOnUiThread(() -> alert("Encryption complete: " + Utilities.bytesToHex(encrypted)));
-        }
-        else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
-        }
-        runOnUiThread(() -> notLoading());
     }
 
     // Helper functions

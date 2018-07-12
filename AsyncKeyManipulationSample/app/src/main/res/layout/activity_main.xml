@@ -1,0 +1,52 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/createkey"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:onClick="createKey"
+            android:text="Create key" />
+
+        <Button
+            android:id="@+id/delete"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:layout_marginTop="60dp"
+            android:onClick="deleteKey"
+            android:text="Delete Key" />
+
+        <Button
+            android:id="@+id/someButton2"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="95dp"
+            android:layout_marginTop="120dp"
+            android:onClick="export"
+            android:text="Export Key" />
+
+    </RelativeLayout>
+
+    <ProgressBar
+        android:id="@+id/loading"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:indeterminate="true" />
+
+</LinearLayout>
