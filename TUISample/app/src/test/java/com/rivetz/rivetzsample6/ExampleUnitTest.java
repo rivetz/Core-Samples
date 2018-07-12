@@ -1,4 +1,4 @@
-package com.rivetz.rivetsample5;
+package com.rivetz.rivetzsample6;
 
 import org.junit.Test;
 
