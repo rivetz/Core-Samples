@@ -1,5 +1,4 @@
 package com.rivetz.rivetzsample6;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -44,6 +43,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void onDevicePairing(int resultCode){
+        if (resultCode == RESULT_CANCELED) {
+            alert("Pairing error: " + String.valueOf(resultCode));
+        }
+        if (resultCode == RESULT_OK) {
+            alert("Paired");
+            if(!rivet.getCapabilities().hasTUI()){
+                alert("Unfortunately this app will not work on your phone because it does not support TUI");
+            }
+
+        }
+
+        notLoading();
+    }
+
     // Creates/Sets the TUI Pin Key
     public void createKeyConfirm(View v){
         keyName = "ConfirmKey";
@@ -84,28 +98,18 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> notLoading());
     }
 
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
-            alert("Paired");
-        }
-
-        notLoading();
-    }
-
     //Encrypts the text in the box asynchronously
     public void encrypt(View v){
         loading();
         EditText textToEncrypt = findViewById(R.id.encryptText);
-        rivet.encryptAsync(keyName,textToEncrypt.getText().toString().getBytes()).whenComplete(this::encryptComplete);
-    }
+        rivet.encryptAsync(keyName,textToEncrypt.getText().toString().getBytes())
+                .whenComplete(this::encryptComplete);
 
+    }
     // Callback for when encryption is complete
     public void encryptComplete(byte[] encrypted, Throwable thrown){
         if(thrown == null){
-           runOnUiThread(() -> alert("Encryption complete: " + Utilities.bytesToHex(encrypted)));
+            runOnUiThread(() -> alert("Encryption complete: " + Utilities.bytesToHex(encrypted)));
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));
