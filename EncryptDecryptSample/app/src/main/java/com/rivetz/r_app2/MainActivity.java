@@ -45,66 +45,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Encrypts a password using the Rivet and saves it to a hashmap where the place is the key
-    public void encryptAndSave(View v) {
-        EditText pass = findViewById(R.id.password);
-        EditText place = findViewById(R.id.place);
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        byte[] encrypted = rivet.encrypt("EncryptKey", bytes, pass.getText().toString().getBytes());
-        mapOfPasswords.put(place.getText().toString(), encrypted);
-        if (mapOfPasswords.containsValue(encrypted)) {
-            alert("Successfully encrypted and saved the password for " + place.getText() + ". It has been encrypted to " + Utilities.bytesToHex(encrypted));
-        }
-        makeUnclickable(findViewById(R.id.encryptAndSave));
-        makeClickable(findViewById(R.id.getPassword));
-    }
-
-    // Asynchronous callback for when decrypting a password is complete
-    public void decryptComplete(byte[] decrypted, Throwable thrown) {
-        if (decrypted != null) {
-            String password = new String(decrypted);
-            runOnUiThread(() -> alert("Your password is: " + password));
-        }
-        else {
-            alert(thrown.getMessage());
-        }
-        notLoading();
-    }
-
-    // Gets the password corresponding to the place the user has entered and decrypts it
-    public void getPassword(View v) {
-        EditText place = findViewById(R.id.place);
-        byte[] encryptedPassword = mapOfPasswords.get(place.getText().toString());
-        rivet.decryptAsync("EncryptKey", encryptedPassword).whenComplete(this::decryptComplete);
-        loading();
-    }
-    //make clickable after key creation the other 2 buttons
-    public void createKey(View v) {
-        try {
-            rivet.createKeyAsync(RivetInterface.KeyType.AES_256_GCM, "EncryptKey", RivetInterface.UsageRule.REQUIRE_TUI_PIN).whenComplete(this::createKeyComplete);
-            loading();
-        }
-        catch (Exception e) {
-            alert(e.getMessage());
-        }
-    }
-
-    // Callback for when Key creation is complete
-    public void createKeyComplete(KeyRecord key, Throwable thrown){
-        if(thrown == null){
-            runOnUiThread(() ->alert("Key successfully created"));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.encryptAndSave)));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.getPassword)));
-            runOnUiThread(() -> makeUnclickable(findViewById(R.id.createkey)));
-        }
-        else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
-        }
-        runOnUiThread(() -> notLoading());
-    }
-
     public void onDevicePairing(int resultCode){
         if (resultCode == RESULT_CANCELED) {
             alert("Pairing error: " + String.valueOf(resultCode));
@@ -127,6 +67,68 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> makeUnclickable(findViewById(R.id.createkey)));
                 runOnUiThread(() -> makeUnclickable(findViewById(R.id.getPassword)));
             }
+        }
+        else {
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+        runOnUiThread(() -> notLoading());
+    }
+
+    // Encrypts a password using the Rivet and saves it to a hashmap where the place is the key
+    public void encryptAndSave(View v) {
+        EditText pass = findViewById(R.id.password);
+        EditText place = findViewById(R.id.place);
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[16];
+        random.nextBytes(bytes);
+        byte[] encrypted = rivet.encrypt("EncryptKey", bytes, pass.getText().toString().getBytes());
+        mapOfPasswords.put(place.getText().toString(), encrypted);
+        if (mapOfPasswords.containsValue(encrypted)) {
+            alert("Successfully encrypted and saved the password for " + place.getText() + ". It has been encrypted to " + Utilities.bytesToHex(encrypted));
+        }
+        makeUnclickable(findViewById(R.id.encryptAndSave));
+        makeClickable(findViewById(R.id.getPassword));
+    }
+
+
+    // Gets the password corresponding to the place the user has entered and decrypts it
+    public void getPassword(View v) {
+        EditText place = findViewById(R.id.place);
+        byte[] encryptedPassword = mapOfPasswords.get(place.getText().toString());
+        rivet.decryptAsync("EncryptKey", encryptedPassword).whenComplete(this::decryptComplete);
+        loading();
+    }
+
+    // Asynchronous callback for when decrypting a password is complete
+    public void decryptComplete(byte[] decrypted, Throwable thrown) {
+        if (decrypted != null) {
+            String password = new String(decrypted);
+            runOnUiThread(() -> alert("Your password is: " + password));
+        }
+        else {
+            alert(thrown.getMessage());
+        }
+        notLoading();
+    }
+
+    // Create an AES key requiring pin input
+    public void createKey(View v) {
+        try {
+            rivet.createKeyAsync(RivetInterface.KeyType.AES_256_GCM, "EncryptKey", RivetInterface.UsageRule.REQUIRE_TUI_PIN).whenComplete(this::createKeyComplete);
+            loading();
+        }
+        catch (Exception e) {
+            alert(e.getMessage());
+        }
+    }
+
+    // Callback for when Key creation is complete
+    public void createKeyComplete(KeyRecord key, Throwable thrown){
+        if(thrown == null){
+            runOnUiThread(() ->alert("Key successfully created"));
+            runOnUiThread(() -> makeClickable(findViewById(R.id.encryptAndSave)));
+            runOnUiThread(() -> makeClickable(findViewById(R.id.getPassword)));
+            runOnUiThread(() -> makeUnclickable(findViewById(R.id.createkey)));
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));

@@ -39,6 +39,33 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void onDevicePairing(int resultCode){
+        if (resultCode == RESULT_CANCELED) {
+            alert("Pairing error: " + String.valueOf(resultCode));
+        }
+        if (resultCode == RESULT_OK) {
+            alert("Paired");
+            rivet.getKeyAsync("SignKey").whenComplete(this::checkKeyComplete);
+            loading();
+        }
+    }
+
+    public void checkKeyComplete(Optional<KeyRecord> key, Throwable thrown){
+        if(thrown == null){
+            if(!key.isPresent()){
+                runOnUiThread(() -> makeUnclickable(findViewById(R.id.sign)));
+                runOnUiThread(() -> makeUnclickable(findViewById(R.id.checkAuthenticity)));
+            }
+            else {
+                runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
+            }
+        }
+        else {
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+        runOnUiThread(() -> notLoading());
+    }
+
     // Signs the real message asynchronously
     public void sign(View v) {
         EditText real = findViewById(R.id.real);
@@ -105,33 +132,6 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> makeClickable(findViewById(R.id.sign)));
             runOnUiThread(() -> makeClickable(findViewById(R.id.checkAuthenticity)));
             runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
-        }
-        else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
-        }
-        runOnUiThread(() -> notLoading());
-    }
-
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
-            alert("Paired");
-            rivet.getKeyAsync("SignKey").whenComplete(this::checkKeyComplete);
-            loading();
-        }
-    }
-
-    public void checkKeyComplete(Optional<KeyRecord> key, Throwable thrown){
-        if(thrown == null){
-            if(!key.isPresent()){
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.sign)));
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.checkAuthenticity)));
-            }
-            else {
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
-            }
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));

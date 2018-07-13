@@ -36,13 +36,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Takes the given text and hashes it using SHA256
-    public void hash(View v){
-        EditText dataToBeHashed = findViewById(R.id.dataForHash);
-            byte[] hashed = rivet.hash(RivetBase.HASH_SHA256,dataToBeHashed.getText().toString().getBytes());
-            alert("This String has been hashed using SHA256: " +Utilities.bytesToHex(hashed));
-    }
-
     public void onDevicePairing(int resultCode){
         if (resultCode == RESULT_CANCELED) {
             alert("Pairing error: " + String.valueOf(resultCode));
@@ -52,6 +45,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         notLoading();
+    }
+
+    // Takes the given text and hashes it using SHA256
+    public void hash(View v){
+        EditText dataToBeHashed = findViewById(R.id.dataForHash);
+            byte[] hashed = rivet.hash(RivetBase.HASH_SHA256,dataToBeHashed.getText().toString().getBytes());
+            alert("This String has been hashed using SHA256: " +Utilities.bytesToHex(hashed));
     }
 
     // Helper functions
