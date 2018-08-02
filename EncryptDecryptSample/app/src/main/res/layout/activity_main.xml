@@ -1,5 +1,4 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -22,37 +21,39 @@
             android:text="Create key" />
 
         <Button
-            android:id="@+id/someButton1"
+            android:id="@+id/encryptAndSave"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="60dp"
-            android:text="Some Text" />
+            android:onClick="encryptAndSave"
+            android:text="Encrypt and Save" />
 
         <Button
-            android:id="@+id/someButton2"
+            android:id="@+id/getPassword"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="120dp"
-            android:text="Some Text" />
+            android:onClick="getPassword"
+            android:text="Get password" />
 
     </RelativeLayout>
 
     <EditText
-        android:id="@+id/someField1"
+        android:id="@+id/password"
         android:imeOptions="actionDone"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
         android:ems="10"
-        android:text="Some Text" />
+        android:text="Password" />
 
     <EditText
-        android:id="@+id/someField2"
+        android:id="@+id/place"
         android:imeOptions="actionDone"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -61,7 +62,8 @@
         android:isScrollContainer="false"
         android:keepScreenOn="false"
         android:minWidth="240dp"
-        android:text="Some Text" />
+        android:text="Place" />
+
 
     <ProgressBar
         android:id="@+id/loading"
