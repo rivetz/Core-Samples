@@ -1,55 +1,80 @@
+/*******************************************************************************
+ *
+ * RIVETZ CORP. CONFIDENTIAL
+ *__________________________
+ *
+ * Copyright (c) 2018 Rivetz Corp.
+ * All Rights Reserved.
+ *
+ * All information and intellectual concepts contained herein is, and remains,
+ * the property of Rivetz Corp and its suppliers, if any.  Dissemination of this
+ * information or reproduction of this material, or any facsimile, is strictly
+ * forbidden unless prior written permission is obtained from Rivetz Corp.
+ ******************************************************************************/
 package com.rivetz.rivetzboilerplate;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.SPID;
-import com.rivetz.bridge.Rivet;
-import com.rivetz.api.internal.Utilities;
+import com.rivetz.bridge.RivetWalletActivity;
 
+public class MainActivity extends RivetWalletActivity {
+    private RivetCrypto crypto;
 
-public class MainActivity extends AppCompatActivity {
-    Rivet rivet;
-
-    // Creates and pairs a Rivet if necessary
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // Starts the Rivet lifecycle with the Activity
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
-        rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
+        loading();
 
-        if (!rivet.isPaired()) {
-            rivet.pairDevice(this);
-        }
+        // Start the pairing process
+        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
+
+            runOnUiThread(() -> {
+                notLoading();
+            });
+
+            if (paired != null) {
+
+                if (paired.booleanValue()) {
+                    crypto = getRivetCrypto();
+                    if (crypto != null) {
+                        runOnUiThread(() -> {
+                            onDevicePairing(true);
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            onDevicePairing(false);
+                        });
+                    }
+                } else  {
+                    runOnUiThread(() -> {
+                        onDevicePairing(false);
+                    });
+                }
+            } else {
+                // An exception occurred, the device is not paired
+                runOnUiThread(() -> {
+                    onDevicePairing(false);
+                });
+            }
+        });
     }
 
-    // Checks if the Rivet was successfully paired
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
-            onDevicePairing(resultCode);
-        }
-    }
-
-    // Creates a Key
-    public void createKey(View v) {
-        // Create a Key using the Rivet
-    }
-
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
+    public void onDevicePairing(boolean success){
+        if (success) {
             alert("Paired");
+            //Do something
+        } else {
+            alert("Pairing error!");
+            //Do something different
         }
-
-        notLoading();
     }
 
     // Helper functions
