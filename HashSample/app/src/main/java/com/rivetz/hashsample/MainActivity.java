@@ -1,57 +1,109 @@
+/*******************************************************************************
+ *
+ * RIVETZ CORP. CONFIDENTIAL
+ *__________________________
+ *
+ * Copyright (c) 2018 Rivetz Corp.
+ * All Rights Reserved.
+ *
+ * All information and intellectual concepts contained herein is, and remains,
+ * the property of Rivetz Corp and its suppliers, if any.  Dissemination of this
+ * information or reproduction of this material, or any facsimile, is strictly
+ * forbidden unless prior written permission is obtained from Rivetz Corp.
+ ******************************************************************************/
 package com.rivetz.hashsample;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
+
+import com.rivetz.api.RivetCodes;
+import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.SPID;
-import com.rivetz.api.internal.RivetBase;
-import com.rivetz.bridge.Rivet;
 import com.rivetz.api.internal.Utilities;
+import com.rivetz.bridge.RivetWalletActivity;
 
-public class MainActivity extends AppCompatActivity {
-    Rivet rivet;
+import java.nio.charset.StandardCharsets;
 
-    // Creates and pairs a Rivet if necessary
+public class MainActivity extends RivetWalletActivity {
+    private RivetCrypto crypto;
+    private Button hashButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // Starts the Rivet lifecycle with the Activity
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
-        rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
-        if (!rivet.isPaired()) {
-            rivet.pairDevice(this);
-        }
+        hashButton = (Button)findViewById(R.id.hash);
+
+        loading();
+
+        // Start the pairing process, then enable UI if successful
+        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
+
+            runOnUiThread(() -> {
+                notLoading();
+            });
+
+            if (paired != null) {
+
+                if (paired.booleanValue()) {
+                    crypto = getRivetCrypto();
+                    if (crypto != null) {
+                        runOnUiThread(() -> {
+                            onDevicePairing(true);
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            onDevicePairing(false);
+                        });
+                    }
+                } else  {
+                    runOnUiThread(() -> {
+                        onDevicePairing(false);
+                    });
+                }
+            } else {
+                // An exception occurred, the device is not paired
+                runOnUiThread(() -> {
+                    onDevicePairing(false);
+                });
+            }
+        });
     }
 
-    // Checks if the Rivet was successfully paired
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        notLoading();
-        if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
-            onDevicePairing(resultCode);
-        }
-    }
-
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
+    public void onDevicePairing(boolean success){
+        if (success) {
             alert("Paired");
+            makeClickable(hashButton);
+        } else {
+            alert("Pairing error!");
+            makeUnclickable(hashButton);
         }
-
-        notLoading();
     }
 
     // Takes the given text and hashes it using SHA256
     public void hash(View v){
         EditText dataToBeHashed = findViewById(R.id.dataForHash);
-            byte[] hashed = rivet.hash(RivetBase.HASH_SHA256,dataToBeHashed.getText().toString().getBytes());
-            alert("This String has been hashed using SHA256: " +Utilities.bytesToHex(hashed));
+
+        crypto.hash(RivetCodes.HASH_SHA256, dataToBeHashed.getText().toString().getBytes(StandardCharsets.UTF_8))
+                .whenComplete((result, ex) -> {
+                    if (result != null) {
+                        runOnUiThread(() -> {
+                            alert("This String has been hashed using SHA256: " +Utilities.bytesToHex(result));
+                        });
+
+                    } else {
+                        runOnUiThread(() -> {
+                            alert("Hash failed: " + ex.getMessage());
+                        });
+                    }
+                });
     }
 
     // Helper functions

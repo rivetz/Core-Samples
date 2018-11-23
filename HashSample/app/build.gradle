@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 28
+
     defaultConfig {
         applicationId "com.rivetz.r_app2"
         minSdkVersion 24
@@ -10,30 +11,23 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
     buildTypes {
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
         compileOptions {
-
             sourceCompatibility JavaVersion.VERSION_1_8
-
             targetCompatibility JavaVersion.VERSION_1_8
-
         }
-
     }
-
-
 
     tasks.withType(JavaCompile) {
-
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-
     }
-
-
 }
 
 dependencies {
@@ -43,8 +37,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.rivetz:rivetz-api:0.10.4'
-    implementation 'com.rivetz:rivetz-bridge:0.10.4@aar'
-    implementation 'com.rivetz:rivetz-lib:0.10.4'
+    implementation "com.rivetz:rivetz-api:${rivetzJVersion}"
+    implementation "com.rivetz:rivetz-bridge:${rivetzJVersion}@aar"
+    implementation "com.rivetz:rivetz-lib:${rivetzJVersion}"
 
 }
