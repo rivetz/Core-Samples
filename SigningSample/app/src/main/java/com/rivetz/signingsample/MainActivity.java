@@ -53,12 +53,18 @@ public class MainActivity extends RivetWalletActivity {
             if (paired != null) {
 
                 if (paired.booleanValue()) {
-
                     try {
                         crypto = getRivetCrypto();
-                        runOnUiThread(() -> {
-                            onDevicePairing(true);
-                        });
+                        if(crypto != null) {
+                            runOnUiThread(() -> {
+                                onDevicePairing(true);
+                            });
+                        }
+                        else {
+                            runOnUiThread(() -> {
+                                onDevicePairing(true);
+                            });
+                        }
                     }
 
                     catch (RivetRuntimeException e) {
