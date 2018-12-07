@@ -86,7 +86,6 @@ public class MainActivity extends RivetWalletActivity {
         } else {
             alert("Pairing error!");
         }
-        notLoading();
     }
 
 

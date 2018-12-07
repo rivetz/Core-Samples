@@ -94,7 +94,6 @@ public class MainActivity extends RivetWalletActivity {
         } else {
             alert("Pairing error!");
         }
-        notLoading();
     }
 
     // Signs the real message asynchronously
