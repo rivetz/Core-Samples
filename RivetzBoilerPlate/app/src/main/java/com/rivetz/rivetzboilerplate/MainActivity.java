@@ -55,7 +55,7 @@ public class MainActivity extends RivetWalletActivity {
                         }
                         else {
                             runOnUiThread(() -> {
-                                onDevicePairing(true);
+                                onDevicePairing(false);
                             });
                         }
                     }

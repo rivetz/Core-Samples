@@ -38,9 +38,9 @@ public class MainActivity extends RivetWalletActivity {
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        runOnUiThread(() -> makeUnclickable(findViewById(R.id.checkAuthenticity)));
-        runOnUiThread(() -> makeUnclickable(findViewById(R.id.sign)));
-        runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
+        makeUnclickable(findViewById(R.id.checkAuthenticity));
+        makeUnclickable(findViewById(R.id.sign));
+        makeUnclickable(findViewById(R.id.createKey));
         loading();
 
 
@@ -62,7 +62,7 @@ public class MainActivity extends RivetWalletActivity {
                         }
                         else {
                             runOnUiThread(() -> {
-                                onDevicePairing(true);
+                                onDevicePairing(false);
                             });
                         }
                     }
@@ -90,7 +90,7 @@ public class MainActivity extends RivetWalletActivity {
     public void onDevicePairing(boolean success){
         if (success) {
             alert("Paired");
-            runOnUiThread(() -> makeClickable(findViewById(R.id.createKey)));
+            makeClickable(findViewById(R.id.createKey));
         } else {
             alert("Pairing error!");
         }
@@ -161,10 +161,12 @@ public class MainActivity extends RivetWalletActivity {
 
     public void createKeyComplete(Void v, Throwable thrown){
         if(thrown == null){
-            runOnUiThread(() ->alert("Key successfully created"));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.sign)));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.checkAuthenticity)));
-            runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
+            runOnUiThread(() ->{
+                alert("Key successfully created");
+                makeClickable(findViewById(R.id.checkAuthenticity));
+                makeClickable(findViewById(R.id.sign));
+                makeUnclickable(findViewById(R.id.createKey));
+            });
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));
