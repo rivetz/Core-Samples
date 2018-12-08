@@ -1,83 +1,114 @@
+/*******************************************************************************
+ *
+ * RIVETZ CORP. CONFIDENTIAL
+ *__________________________
+ *
+ * Copyright (c) 2018 Rivetz Corp.
+ * All Rights Reserved.
+ *
+ * All information and intellectual concepts contained herein is, and remains,
+ * the property of Rivetz Corp and its suppliers, if any.  Dissemination of this
+ * information or reproduction of this material, or any facsimile, is strictly
+ * forbidden unless prior written permission is obtained from Rivetz Corp.
+ ******************************************************************************/
+
 package com.rivetz.signingsample;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
-import com.rivetz.api.KeyRecord;
+
+import com.rivetz.api.RivetKeyTypes;
+import com.rivetz.api.RivetRules;
+import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
-import com.rivetz.bridge.Rivet;
-import com.rivetz.api.RivetInterface;
-import java.util.Optional;
+import com.rivetz.api.RivetCrypto;
+import com.rivetz.api.Signature;
+import com.rivetz.bridge.RivetWalletActivity;
 
-public class MainActivity extends AppCompatActivity {
-    Rivet rivet;
-    byte[] realmessage;
+public class MainActivity extends RivetWalletActivity {
+    private RivetCrypto crypto;
+    private Signature signature;
+    private String message;
 
-    //creates and pairs a Rivet if necessary
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
-        if (!rivet.isPaired()) {
-            rivet.pairDevice(this);
-        }
+        makeUnclickable(findViewById(R.id.checkAuthenticity));
+        makeUnclickable(findViewById(R.id.sign));
+        makeUnclickable(findViewById(R.id.createKey));
+        loading();
+
+
+        // Start the pairing process
+        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
+            runOnUiThread(() -> {
+                notLoading();
+            });
+
+            if (paired != null) {
+
+                if (paired.booleanValue()) {
+                    try {
+                        crypto = getRivetCrypto();
+                        if(crypto != null) {
+                            runOnUiThread(() -> {
+                                onDevicePairing(true);
+                            });
+                        }
+                        else {
+                            runOnUiThread(() -> {
+                                onDevicePairing(false);
+                            });
+                        }
+                    }
+
+                    catch (RivetRuntimeException e) {
+                        runOnUiThread(() -> {
+                            alert(e.getError().getMessage());
+                        });
+                    }
+
+                } else  {
+                    runOnUiThread(() -> {
+                        onDevicePairing(false);
+                    });
+                }
+            } else {
+                // An exception occurred, the device is not paired
+                runOnUiThread(() -> {
+                    onDevicePairing(false);
+                });
+            }
+        });
     }
 
-
-    // Checks if the Rivet was successfully paired
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
-            onDevicePairing(resultCode);
-        }
-    }
-
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
+    public void onDevicePairing(boolean success){
+        if (success) {
             alert("Paired");
-            rivet.getKeyAsync("SignKey").whenComplete(this::checkKeyComplete);
-            loading();
+            makeClickable(findViewById(R.id.createKey));
+        } else {
+            alert("Pairing error!");
         }
-    }
-
-    public void checkKeyComplete(Optional<KeyRecord> key, Throwable thrown){
-        if(thrown == null){
-            if(!key.isPresent()){
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.sign)));
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.checkAuthenticity)));
-            }
-            else {
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
-            }
-        }
-        else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
-        }
-        runOnUiThread(() -> notLoading());
     }
 
     // Signs the real message asynchronously
     public void sign(View v) {
         EditText real = findViewById(R.id.real);
-        rivet.signAsync("SignKey",real.getText().toString().getBytes()).whenComplete(this::signComplete);
+        message = real.getText().toString();
+        crypto.sign("SigningKey", message.getBytes()).whenComplete(this::signComplete);
         makeUnclickable(findViewById(R.id.sign));
         loading();
     }
 
     // Callback when the real message is done signing which checks if the signing was successful
-    public void signComplete(byte[] signature, Throwable thrown) {
-        if (signature != null) {
-            runOnUiThread(() -> realmessage = signature);
+    public void signComplete(Signature s, Throwable thrown) {
+        if (thrown == null) {
+            signature = s;
             runOnUiThread(() -> alert("Signing complete"));
         }
         else{
@@ -90,21 +121,21 @@ public class MainActivity extends AppCompatActivity {
     // Verifies if the real message is authentic asynchronously using its signature
     public void checkAuthenticity(View v){
         EditText real = findViewById(R.id.real);
-        if(realmessage == null){
+        if(signature == null){
             alert("Both messages are fake!");
         }
         else {
-            rivet.verifyAsync("SignKey",realmessage,real.getText().toString().getBytes()).whenComplete(this::verifyComplete);
+            crypto.verify("SigningKey", signature, message.getBytes()).whenComplete(this::verifyComplete);
             loading();
         }
     }
 
     // Callback for when the verification is done which checks if the message is authentic or not and returns an alert accordingly
     public void verifyComplete(Boolean validity, Throwable thrown){
-        if(validity != null){
+        if(thrown == null){
             if(validity){
                 EditText real = findViewById(R.id.real);
-                runOnUiThread(() ->alert("The message " + "'" + real.getText().toString() + "'" + " is authentic, the other is fake!"));
+                runOnUiThread(() ->alert("The message " + "'" + message + "'" + " is authentic, the other is fake!"));
             }
             if(!validity){
                 alert("Both messages are fake!");
@@ -117,7 +148,9 @@ public class MainActivity extends AppCompatActivity {
     // Creates a Key asynchronously
     public void createKey(View v) {
         try {
-            rivet.createKeyAsync(RivetInterface.KeyType.ECDSA_NISTP256, "SignKey", RivetInterface.UsageRule.REQUIRE_TUI_CONFIRM).whenComplete(this::createKeyComplete);
+            //Make sure the key doesn't already exist, then create a new one
+            crypto.deleteKey("SigningKey").get();
+            crypto.createKey("SigningKey", RivetKeyTypes.NISTP256, new RivetRules[0]).whenComplete(this::createKeyComplete);
             loading();
         }
 
@@ -126,12 +159,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void createKeyComplete(KeyRecord key, Throwable thrown){
+    public void createKeyComplete(Void v, Throwable thrown){
         if(thrown == null){
-            runOnUiThread(() ->alert("Key successfully created"));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.sign)));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.checkAuthenticity)));
-            runOnUiThread(() -> makeUnclickable(findViewById(R.id.createKey)));
+            runOnUiThread(() ->{
+                alert("Key successfully created");
+                makeClickable(findViewById(R.id.checkAuthenticity));
+                makeClickable(findViewById(R.id.sign));
+                makeUnclickable(findViewById(R.id.createKey));
+            });
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));
