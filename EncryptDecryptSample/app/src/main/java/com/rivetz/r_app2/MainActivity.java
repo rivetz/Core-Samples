@@ -12,6 +12,7 @@ import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.api.RivetKeyDescriptor;
 
 public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
@@ -122,17 +123,47 @@ public class MainActivity extends RivetWalletActivity {
         notLoading();
     }
 
-    // Create a key asynchronously
-    public void createKey(View v) {
+    // Check the key's existence asynchronously by generating a descriptor for it
+    // before creating it
+    public void checkKeyExistence(View v) {
         try {
-            //Ensure the key doesn't already exist
-            crypto.deleteKey("EncryptKey").get();
-            // Create the key
-            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, new RivetRules[0]).whenComplete(this::createKeyComplete);
+            crypto.getKeyDescriptor("EncryptKey").whenComplete(this::checkKeyExistenceComplete);
             loading();
         }
         catch (Exception e) {
             alert(e.getMessage());
+        }
+    }
+
+    // Callback for when Key existence checking is complete
+    public void checkKeyExistenceComplete(RivetKeyDescriptor descriptor, Throwable thrown){
+        if(thrown == null) {
+            if (descriptor != null) {
+                runOnUiThread(() -> {
+                    alert("Key already exists");
+                    makeClickable(findViewById(R.id.encrypt));
+                    makeUnclickable(findViewById(R.id.createKey));
+                    notLoading();
+                });
+            }
+            else {
+                createKey();
+            }
+
+        }
+        else{
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+    }
+
+    // Create a key asynchronously
+    public void createKey() {
+        try {
+            // Create the key
+            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, new RivetRules[0]).whenComplete(this::createKeyComplete);
+        }
+        catch (Exception e) {
+            runOnUiThread(() -> alert(e.getMessage()));
         }
     }
 
