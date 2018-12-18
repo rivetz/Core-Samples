@@ -27,6 +27,8 @@ import com.rivetz.api.SPID;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.Signature;
 import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.api.RivetKeyDescriptor;
+
 
 public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
@@ -144,18 +146,48 @@ public class MainActivity extends RivetWalletActivity {
         else alert(thrown.getMessage());
         notLoading();
     }
+    // Check the key's existence asynchronously by generating a descriptor for it
+    // before creating it
+    public void checkKeyExistence(View v) {
+        try {
+            crypto.getKeyDescriptor("SigningKey").whenComplete(this::checkKeyExistenceComplete);
+            loading();
+        }
+        catch (Exception e) {
+            alert(e.getMessage());
+        }
+    }
+
+    // Callback for when Key existence checking is complete
+    public void checkKeyExistenceComplete(RivetKeyDescriptor descriptor, Throwable thrown){
+        if(thrown == null) {
+            if (descriptor != null) {
+                runOnUiThread(() ->{
+                    alert("Key already exists");
+                    makeClickable(findViewById(R.id.checkAuthenticity));
+                    makeClickable(findViewById(R.id.sign));
+                    makeUnclickable(findViewById(R.id.createKey));
+                    notLoading();
+                });
+            }
+            else {
+                createKey();
+            }
+
+        }
+        else{
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+    }
 
     // Creates a Key asynchronously
-    public void createKey(View v) {
+    public void createKey() {
         try {
-            //Make sure the key doesn't already exist, then create a new one
-            crypto.deleteKey("SigningKey").get();
             crypto.createKey("SigningKey", RivetKeyTypes.NISTP256, new RivetRules[0]).whenComplete(this::createKeyComplete);
-            loading();
         }
 
         catch (Exception e){
-            alert(e.getMessage());
+            runOnUiThread(() -> alert(e.getMessage()));
         }
     }
 

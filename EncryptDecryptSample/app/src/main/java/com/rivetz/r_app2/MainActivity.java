@@ -1,109 +1,121 @@
 package com.rivetz.r_app2;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
-
-import com.rivetz.api.KeyRecord;
+import com.rivetz.api.EncryptResult;
+import com.rivetz.api.RivetCrypto;
+import com.rivetz.api.RivetKeyTypes;
+import com.rivetz.api.RivetRules;
+import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
-import com.rivetz.api.internal.Utilities;
-import com.rivetz.bridge.Rivet;
-import com.rivetz.api.RivetInterface;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Optional;
+import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.api.RivetKeyDescriptor;
 
-public class MainActivity extends AppCompatActivity {
-    Rivet rivet;
-    HashMap<String, byte[]> mapOfPasswords;
+public class MainActivity extends RivetWalletActivity {
+    private RivetCrypto crypto;
+    private EncryptResult encryptedText;
 
-    // Creates and pairs a Rivet if necessary
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mapOfPasswords = new HashMap<>();
-        rivet = new Rivet(this, SPID.DEVELOPER_TOOLS_SPID);
+        makeUnclickable(findViewById(R.id.encrypt));
+        makeUnclickable(findViewById(R.id.decrypt));
+        makeUnclickable(findViewById(R.id.createKey));
+        loading();
 
-        if (!rivet.isPaired()) {
-            rivet.pairDevice(this);
-        }
+        // Start the pairing process
+        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
+            runOnUiThread(() -> {
+                notLoading();
+            });
+
+            if (paired != null) {
+
+                if (paired.booleanValue()) {
+
+                    try {
+                        crypto = getRivetCrypto();
+                        if(crypto != null) {
+                            runOnUiThread(() -> {
+                                onDevicePairing(true);
+                            });
+                        }
+                        else {
+                            runOnUiThread(() -> {
+                                onDevicePairing(false);
+                            });
+                        }
+                    }
+
+                    catch (RivetRuntimeException e) {
+                        runOnUiThread(() -> {
+                            alert(e.getError().getMessage());
+                        });
+                    }
+
+                } else  {
+                    runOnUiThread(() -> {
+                        onDevicePairing(false);
+                    });
+                }
+            } else {
+                // An exception occurred, the device is not paired
+                runOnUiThread(() -> {
+                    onDevicePairing(false);
+                });
+            }
+        });
     }
 
-    // Checks if the Rivet was successfully paired
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        notLoading();
-        if (requestCode == Rivet.INSTRUCT_PAIRDEVICE) {
-            onDevicePairing(resultCode);
-        }
-    }
-
-    public void onDevicePairing(int resultCode){
-        if (resultCode == RESULT_CANCELED) {
-            alert("Pairing error: " + String.valueOf(resultCode));
-        }
-        if (resultCode == RESULT_OK) {
+    public void onDevicePairing(boolean success){
+        if (success) {
             alert("Paired");
-            rivet.getKeyAsync("EncryptKey").whenComplete(this::checkKeyComplete);
-            loading();
+            makeClickable(findViewById(R.id.createKey));
+        } else {
+            alert("Pairing error!");
         }
+        notLoading();
     }
 
-    // Callback for when checking if a key exists is done
-    public void checkKeyComplete(Optional<KeyRecord> key, Throwable thrown){
+    // Encrypts a password using the Rivet
+    public void encrypt(View v) {
+        EditText payload = findViewById(R.id.payload);
+        crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
+        makeUnclickable(findViewById(R.id.encrypt));
+        loading();
+    }
+
+    public void encryptComplete(EncryptResult e , Throwable thrown){
         if(thrown == null){
-            if(!key.isPresent()){
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.encryptAndSave)));
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.getPassword)));
-            }
-            else {
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.createkey)));
-                runOnUiThread(() -> makeUnclickable(findViewById(R.id.getPassword)));
-            }
+            encryptedText = e;
+            runOnUiThread(() ->alert("Your text has been encrypted to " + new String(e.getCipherText())));
+            runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
+            runOnUiThread(() -> notLoading());
         }
         else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            alert(thrown.getMessage());
         }
-        runOnUiThread(() -> notLoading());
     }
-
-    // Encrypts a password using the Rivet and saves it to a hashmap where the place is the key
-    public void encryptAndSave(View v) {
-        EditText pass = findViewById(R.id.password);
-        EditText place = findViewById(R.id.place);
-        SecureRandom random = new SecureRandom();
-        byte[] bytes = new byte[16];
-        random.nextBytes(bytes);
-        byte[] encrypted = rivet.encrypt("EncryptKey", bytes, pass.getText().toString().getBytes());
-        mapOfPasswords.put(place.getText().toString(), encrypted);
-        if (mapOfPasswords.containsValue(encrypted)) {
-            alert("Successfully encrypted and saved the password for " + place.getText() + ". It has been encrypted to " + Utilities.bytesToHex(encrypted));
-        }
-        makeUnclickable(findViewById(R.id.encryptAndSave));
-        makeClickable(findViewById(R.id.getPassword));
-    }
-
 
     // Gets the password corresponding to the place the user has entered and decrypts it
-    public void getPassword(View v) {
-        EditText place = findViewById(R.id.place);
-        byte[] encryptedPassword = mapOfPasswords.get(place.getText().toString());
-        rivet.decryptAsync("EncryptKey", encryptedPassword).whenComplete(this::decryptComplete);
+    public void decrypt(View v) {
+        crypto.decrypt("EncryptKey", encryptedText).whenComplete(this::decryptComplete);
+        makeUnclickable(findViewById(R.id.decrypt));
         loading();
     }
 
     // Asynchronous callback for when decrypting a password is complete
     public void decryptComplete(byte[] decrypted, Throwable thrown) {
         if (decrypted != null) {
-            String password = new String(decrypted);
-            runOnUiThread(() -> alert("Your password is: " + password));
+            runOnUiThread(() -> alert("Your text has been decrypted: " + new String(decrypted)));
+            runOnUiThread(() -> makeClickable(findViewById(R.id.encrypt)));
         }
         else {
             alert(thrown.getMessage());
@@ -111,10 +123,11 @@ public class MainActivity extends AppCompatActivity {
         notLoading();
     }
 
-    // Create an AES key requiring pin input
-    public void createKey(View v) {
+    // Check the key's existence asynchronously by generating a descriptor for it
+    // before creating it
+    public void checkKeyExistence(View v) {
         try {
-            rivet.createKeyAsync(RivetInterface.KeyType.AES_256_GCM, "EncryptKey", RivetInterface.UsageRule.REQUIRE_TUI_PIN).whenComplete(this::createKeyComplete);
+            crypto.getKeyDescriptor("EncryptKey").whenComplete(this::checkKeyExistenceComplete);
             loading();
         }
         catch (Exception e) {
@@ -122,18 +135,52 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // Callback for when Key existence checking is complete
+    public void checkKeyExistenceComplete(RivetKeyDescriptor descriptor, Throwable thrown){
+        if(thrown == null) {
+            if (descriptor != null) {
+                runOnUiThread(() -> {
+                    alert("Key already exists");
+                    makeClickable(findViewById(R.id.encrypt));
+                    makeUnclickable(findViewById(R.id.createKey));
+                    notLoading();
+                });
+            }
+            else {
+                createKey();
+            }
+
+        }
+        else{
+            runOnUiThread(() -> alert(thrown.getMessage()));
+        }
+    }
+
+    // Create a key asynchronously
+    public void createKey() {
+        try {
+            // Create the key
+            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, new RivetRules[0]).whenComplete(this::createKeyComplete);
+        }
+        catch (Exception e) {
+            runOnUiThread(() -> alert(e.getMessage()));
+        }
+    }
+
     // Callback for when Key creation is complete
-    public void createKeyComplete(KeyRecord key, Throwable thrown){
-        if(thrown == null){
-            runOnUiThread(() ->alert("Key successfully created"));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.encryptAndSave)));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.getPassword)));
-            runOnUiThread(() -> makeUnclickable(findViewById(R.id.createkey)));
+    public void createKeyComplete(Void v, Throwable thrown){
+        if(thrown == null) {
+            runOnUiThread(() -> {
+                alert("Key successfully created");
+                makeClickable(findViewById(R.id.encrypt));
+                makeUnclickable(findViewById(R.id.createKey));
+
+            });
         }
         else {
             runOnUiThread(() -> alert(thrown.getMessage()));
         }
-        runOnUiThread(() -> notLoading());
+        notLoading();
     }
 
     // Helper functions

@@ -12,57 +12,45 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/createkey"
+            android:id="@+id/createKey"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
-            android:onClick="createKey"
+            android:onClick="checkKeyExistence"
             android:text="Create key" />
 
         <Button
-            android:id="@+id/encryptAndSave"
+            android:id="@+id/encrypt"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="60dp"
-            android:onClick="encryptAndSave"
-            android:text="Encrypt and Save" />
+            android:onClick="encrypt"
+            android:text="Encrypt" />
 
         <Button
-            android:id="@+id/getPassword"
+            android:id="@+id/decrypt"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="120dp"
-            android:onClick="getPassword"
-            android:text="Get password" />
+            android:onClick="decrypt"
+            android:text="Decrypt" />
 
     </RelativeLayout>
 
     <EditText
-        android:id="@+id/password"
+        android:id="@+id/payload"
         android:imeOptions="actionDone"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
         android:ems="10"
-        android:text="Password" />
-
-    <EditText
-        android:id="@+id/place"
-        android:imeOptions="actionDone"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginTop="10dp"
-        android:isScrollContainer="false"
-        android:keepScreenOn="false"
-        android:minWidth="240dp"
-        android:text="Place" />
+        android:text="Enter Text here" />
 
 
     <ProgressBar
