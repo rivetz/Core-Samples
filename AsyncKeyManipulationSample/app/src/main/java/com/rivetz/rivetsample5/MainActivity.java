@@ -32,8 +32,6 @@ import java.util.List;
 
 public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
-    private List<String> keysToBackup;
-    private byte[] backedupKeys;
 
     // Creates and pairs a Rivet if necessary
     @Override
@@ -42,9 +40,9 @@ public class MainActivity extends RivetWalletActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         makeUnclickable(findViewById(R.id.createKey));
-        makeUnclickable(findViewById(R.id.backup));
+        makeUnclickable(findViewById(R.id.describe));
         makeUnclickable(findViewById(R.id.delete));
-        makeUnclickable(findViewById(R.id.restore));
+        makeUnclickable(findViewById(R.id.getKeyNames));
         loading();
 
 
@@ -94,52 +92,7 @@ public class MainActivity extends RivetWalletActivity {
     public void onDevicePairing(boolean success){
         if (success) {
             alert("Paired");
-            keysToBackup = new ArrayList<>(); {
-            };
-            // Silently create the key used to encrypt and backup the other key
-            loading();
-            try {
-                //Check if the key exists
-                crypto.getKeyDescriptor("BackupKey").whenComplete((descriptor,thrown) -> {
-                    if(thrown == null){
-                        if(descriptor != null){
-                            //The key exists, allow creation of key to be backed up
-                            runOnUiThread(() -> {
-                                makeClickable(findViewById(R.id.createKey));
-                                notLoading();
-                                alert("Backup Key ready");
-                            });
-
-
-                        }
-                        else {
-                            //The key does not exist already,
-                            //create the key first and allow the creation of the key to be backed up on success
-                            crypto.createKey("BackupKey", RivetKeyTypes.AES256_CGM, new RivetRules[0]).whenComplete((v, ex) -> {
-                                if(ex == null){
-                                    runOnUiThread(() -> {
-                                        makeClickable(findViewById(R.id.createKey));
-                                        notLoading();
-                                        alert("Backup Key ready");
-                                    });
-                                }
-                                else {
-                                    runOnUiThread(() -> alert(ex.getMessage()));
-                                }
-
-                            });
-                        }
-                    }
-                    else {
-                        runOnUiThread(() -> alert(thrown.getMessage()));
-                    }
-
-                });
-
-            }
-            catch (Exception e){
-                alert(e.getMessage());
-            }
+            makeClickable(findViewById(R.id.createKey));
         } else {
             alert("Pairing error!");
         }
@@ -163,9 +116,9 @@ public class MainActivity extends RivetWalletActivity {
             if (descriptor != null) {
                 runOnUiThread(() ->{
                     alert("Key already exists");
-                    makeUnclickable(findViewById(R.id.createKey));
-                    makeClickable(findViewById(R.id.backup));
-                    keysToBackup.add("MyKey");
+                    makeClickable(findViewById(R.id.getKeyNames));
+                    makeClickable(findViewById(R.id.delete));
+                    makeClickable(findViewById(R.id.describe));
                     notLoading();
                 });
             }
@@ -194,9 +147,9 @@ public class MainActivity extends RivetWalletActivity {
         if(thrown == null){
             runOnUiThread(() ->{
                 alert("Key successfully created");
-                makeUnclickable(findViewById(R.id.createKey));
-                makeClickable(findViewById(R.id.backup));
-                keysToBackup.add("MyKey");
+                makeClickable(findViewById(R.id.getKeyNames));
+                makeClickable(findViewById(R.id.delete));
+                makeClickable(findViewById(R.id.describe));
             });
         }
         else {
@@ -220,7 +173,6 @@ public class MainActivity extends RivetWalletActivity {
         if (thrown == null) {
             runOnUiThread(() ->{
                 alert("Key successfully deleted");
-                makeClickable(findViewById(R.id.restore));
                 makeUnclickable(findViewById(R.id.delete));
             });
         } else {
@@ -229,22 +181,18 @@ public class MainActivity extends RivetWalletActivity {
         notLoading();
     }
 
-
-    // Gets the KeyRecord for the Key asynchronously
-    public void backup(View v) {
-        crypto.backupKeys("BackupKey",keysToBackup).whenComplete(this::backupComplete);
+    // Gets the Keydescriptor for the Key asynchronously
+    public void describe(View v) {
+        crypto.getKeyDescriptor("MyKey").whenComplete(this::describeComplete);
         loading();
     }
 
     // Callback for when the backup function is complete which returns a byte array
     // of the now encrypted keys that were meant to be backed up
-    public void backupComplete(byte[] keys, Throwable thrown) {
+    public void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
         if (thrown == null) {
-            backedupKeys = keys;
             runOnUiThread(() ->{
-                makeClickable(findViewById(R.id.delete));
-                makeUnclickable(findViewById(R.id.backup));
-                alert("Key backed up");
+                alert("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
             });
         }
         else{
@@ -255,9 +203,9 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Restores the Key asynchronously after it was exported and deleted
-    public void restore(View v) {
+    public void getKeyNames(View v) {
         try {
-            crypto.restoreKeys("BackupKey",backedupKeys).whenComplete(this::restoreComplete);
+            crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::getKeyNamesComplete);
             loading();
         } catch (Exception e) {
             alert(e.getMessage());
@@ -265,12 +213,13 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Callback for when restoring the Key is complete
-    public void restoreComplete(Void v, Throwable thrown) {
+    public void getKeyNamesComplete(List<String > keys, Throwable thrown) {
         if (thrown == null) {
             runOnUiThread(() -> {
-                alert("Key successfully restored");
-                makeUnclickable(findViewById(R.id.createKey));
-                makeUnclickable(findViewById(R.id.restore));
+                alert("The Keys of the NISTP256 type saved on this device are");
+                for(int i=0; i<keys.size(); i++) {
+                    alert(keys.get(i));
+                }
             });
         } else {
             runOnUiThread(() -> alert(thrown.getMessage()));

@@ -22,14 +22,14 @@
             android:text="Create key" />
 
         <Button
-            android:id="@+id/backup"
+            android:id="@+id/getKeyNames"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="60dp"
-            android:onClick="backup"
-            android:text="Backup Key" />
+            android:onClick="getKeyNames"
+            android:text="Get Key names" />
 
         <Button
             android:id="@+id/delete"
@@ -43,14 +43,14 @@
 
 
         <Button
-            android:id="@+id/restore"
+            android:id="@+id/describe"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="180dp"
-            android:onClick="restore"
-            android:text="Restore Key" />
+            android:onClick="describe"
+            android:text="Describe Key" />
 
     </RelativeLayout>
 
