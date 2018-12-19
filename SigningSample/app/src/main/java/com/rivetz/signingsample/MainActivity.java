@@ -146,6 +146,7 @@ public class MainActivity extends RivetWalletActivity {
         else alert(thrown.getMessage());
         notLoading();
     }
+
     // Check the key's existence asynchronously by generating a descriptor for it
     // before creating it
     public void checkKeyExistence(View v) {
