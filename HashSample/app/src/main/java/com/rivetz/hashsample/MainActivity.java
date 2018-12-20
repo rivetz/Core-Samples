@@ -13,14 +13,13 @@
  ******************************************************************************/
 package com.rivetz.hashsample;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
 
-import com.rivetz.api.RivetCodes;
+import com.rivetz.api.RivetHashTypes;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.SPID;
 import com.rivetz.api.internal.Utilities;
@@ -39,7 +38,7 @@ public class MainActivity extends RivetWalletActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-        hashButton = (Button)findViewById(R.id.hash);
+        hashButton = (Button) findViewById(R.id.hash);
 
         loading();
 
@@ -63,7 +62,7 @@ public class MainActivity extends RivetWalletActivity {
                             onDevicePairing(false);
                         });
                     }
-                } else  {
+                } else {
                     runOnUiThread(() -> {
                         onDevicePairing(false);
                     });
@@ -77,7 +76,7 @@ public class MainActivity extends RivetWalletActivity {
         });
     }
 
-    public void onDevicePairing(boolean success){
+    public void onDevicePairing(boolean success) {
         if (success) {
             alert("Paired");
             makeClickable(hashButton);
@@ -88,14 +87,14 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Takes the given text and hashes it using SHA256
-    public void hash(View v){
+    public void hash(View v) {
         EditText dataToBeHashed = findViewById(R.id.dataForHash);
 
-        crypto.hash(RivetCodes.HASH_SHA256, dataToBeHashed.getText().toString().getBytes(StandardCharsets.UTF_8))
+        crypto.hash(RivetHashTypes.SHA256, dataToBeHashed.getText().toString().getBytes(StandardCharsets.UTF_8))
                 .whenComplete((result, ex) -> {
                     if (result != null) {
                         runOnUiThread(() -> {
-                            alert("This String has been hashed using SHA256: " +Utilities.bytesToHex(result));
+                            alert("This String has been hashed using SHA256: " + Utilities.bytesToHex(result));
                         });
 
                     } else {
@@ -116,24 +115,24 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Makes a button unclickable
-    public void makeUnclickable(Button button){
+    public void makeUnclickable(Button button) {
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
     // Makes a button clickable
-    public void makeClickable(Button button){
+    public void makeClickable(Button button) {
         button.setAlpha(1f);
         button.setClickable(true);
     }
 
     // Shows a loading animation
-    public void loading(){
+    public void loading() {
         findViewById(R.id.loading).setVisibility(View.VISIBLE);
     }
 
     // Makes the loading animation invisible
-    public void notLoading(){
+    public void notLoading() {
         findViewById(R.id.loading).setVisibility(View.GONE);
     }
 }

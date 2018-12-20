@@ -20,6 +20,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
 
+import com.rivetz.api.RivetHashTypes;
 import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
@@ -102,7 +103,7 @@ public class MainActivity extends RivetWalletActivity {
     public void sign(View v) {
         EditText real = findViewById(R.id.real);
         message = real.getText().toString();
-        crypto.sign("SigningKey", message.getBytes()).whenComplete(this::signComplete);
+        crypto.sign("SigningKey", message.getBytes(), RivetHashTypes.SHA256).whenComplete(this::signComplete);
         makeUnclickable(findViewById(R.id.sign));
         loading();
     }
@@ -127,7 +128,7 @@ public class MainActivity extends RivetWalletActivity {
             alert("Both messages are fake!");
         }
         else {
-            crypto.verify("SigningKey", signature, message.getBytes()).whenComplete(this::verifyComplete);
+            crypto.verify("SigningKey", message.getBytes(), RivetHashTypes.SHA256, signature).whenComplete(this::verifyComplete);
             loading();
         }
     }
