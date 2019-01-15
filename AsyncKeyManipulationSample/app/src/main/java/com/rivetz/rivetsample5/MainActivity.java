@@ -25,13 +25,18 @@ import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
+import com.rivetz.bridge.DevicePropertyIds;
+import com.rivetz.bridge.RivetAndroid;
 import com.rivetz.bridge.RivetWalletActivity;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
+
 public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
+    private static String drtSupported;
 
     // Creates and pairs a Rivet if necessary
     @Override
@@ -89,10 +94,32 @@ public class MainActivity extends RivetWalletActivity {
         });
     }
 
+    /**
+     * Called when getDeviceProperties completes
+     *
+     * @param result String result of the properties call
+     * @param throwable if not null, the exception
+     */
+    private void getPropertyComplete(String result, Throwable throwable) {
+        if (throwable == null) {
+            drtSupported = result;
+            if (result.equals("true"))
+                runOnUiThread(() -> alert("Paired, DRT supported"));
+            else
+                runOnUiThread(() -> alert("Paired, DRT not supported"));
+            makeClickable(findViewById(R.id.createKey));
+
+        } else {
+            runOnUiThread(() -> alert("Failed to get DRT properties"));
+        }
+    }
+
     public void onDevicePairing(boolean success){
         if (success) {
-            alert("Paired");
-            makeClickable(findViewById(R.id.createKey));
+            // Check if DRT is supported
+            RivetAndroid rivet = (RivetAndroid)crypto;
+            rivet.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
+                    whenComplete(this::getPropertyComplete);
         } else {
             alert("Pairing error!");
         }
@@ -102,7 +129,7 @@ public class MainActivity extends RivetWalletActivity {
     // before creating it
     public void checkKeyExistence(View v) {
         try {
-            crypto.getKeyDescriptor("MyKey").whenComplete(this::checkKeyExistenceComplete);
+            crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::checkKeyExistenceComplete);
             loading();
         }
         catch (Exception e) {
@@ -111,9 +138,9 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Callback for when Key existence checking is complete
-    public void checkKeyExistenceComplete(RivetKeyDescriptor descriptor, Throwable thrown){
+    public void checkKeyExistenceComplete(List<String> keyNames, Throwable thrown){
         if(thrown == null) {
-            if (descriptor != null) {
+            if (keyNames.contains("MyKey")) {
                 runOnUiThread(() ->{
                     alert("Key already exists");
                     makeClickable(findViewById(R.id.getKeyNames));
@@ -135,7 +162,15 @@ public class MainActivity extends RivetWalletActivity {
     // Creates a Key asynchronously
     public void createKey() {
         try {
-            crypto.createKey("MyKey", RivetKeyTypes.NISTP256, new RivetRules[0]).whenComplete(this::createKeyComplete);
+            // If DRT supported add Dual Root of Trust usage rule
+            RivetRules rules[];
+            if (drtSupported.equals("true")) {
+                rules = new RivetRules[1];
+                rules[0] = REQUIRE_DUAL_ROOT;
+            } else {
+                rules = new RivetRules[0];
+            }
+            crypto.createKey("MyKey", RivetKeyTypes.NISTP256, rules).whenComplete(this::createKeyComplete);
         }
 
         catch (Exception e){
