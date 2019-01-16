@@ -14,6 +14,7 @@
 
 package com.rivetz.r_app2;
 
+import java.util.List;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
@@ -25,16 +26,19 @@ import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
+import com.rivetz.bridge.DevicePropertyIds;
+import com.rivetz.bridge.RivetAndroid;
 import com.rivetz.bridge.RivetWalletActivity;
-import com.rivetz.api.RivetKeyDescriptor;
+import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 
 public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
     private EncryptResult encryptedText;
+    private static String drtSupported;
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
@@ -88,10 +92,33 @@ public class MainActivity extends RivetWalletActivity {
         });
     }
 
+    /**
+     * Called when getDeviceProperties completes
+     *
+     * @param result String result of the properties call
+     * @param throwable if not null, the exception
+     */
+    private void getPropertyComplete(String result, Throwable throwable) {
+        if (throwable == null) {
+            drtSupported = result;
+            if (result.equals("true"))
+                runOnUiThread(() -> alert("Paired, DRT supported"));
+            else
+                runOnUiThread(() -> alert("Paired, DRT not supported"));
+            makeClickable(findViewById(R.id.createKey));
+
+        } else {
+            runOnUiThread(() -> alert("Failed to get DRT properties"));
+        }
+    }
+
     public void onDevicePairing(boolean success){
         if (success) {
             alert("Paired");
-            makeClickable(findViewById(R.id.createKey));
+
+            // Check if DRT is supported
+            getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
+                    whenComplete(this::getPropertyComplete);
         } else {
             alert("Pairing error!");
         }
@@ -141,7 +168,7 @@ public class MainActivity extends RivetWalletActivity {
     // before creating it
     public void checkKeyExistence(View v) {
         try {
-            crypto.getKeyDescriptor("EncryptKey").whenComplete(this::checkKeyExistenceComplete);
+            crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).whenComplete(this::checkKeyExistenceComplete);
             loading();
         }
         catch (Exception e) {
@@ -150,9 +177,10 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Callback for when Key existence checking is complete
-    public void checkKeyExistenceComplete(RivetKeyDescriptor descriptor, Throwable thrown){
+    public void checkKeyExistenceComplete(List<String> keyNames, Throwable thrown){
         if(thrown == null) {
-            if (descriptor != null) {
+            // Check if the key is in the list if key names
+            if (keyNames.contains("EncryptKey")) {
                 runOnUiThread(() -> {
                     alert("Key already exists");
                     makeClickable(findViewById(R.id.encrypt));
@@ -163,9 +191,8 @@ public class MainActivity extends RivetWalletActivity {
             else {
                 createKey();
             }
-
         }
-        else{
+        else {
             runOnUiThread(() -> alert(thrown.getMessage()));
         }
     }
@@ -173,8 +200,15 @@ public class MainActivity extends RivetWalletActivity {
     // Create a key asynchronously
     public void createKey() {
         try {
+            // If DRT supported add Dual Root of Trust usage rule
+            RivetRules rules[] = null;
+            if (drtSupported.equals("true")) {
+                rules = new RivetRules[1];
+                rules[0] = REQUIRE_DUAL_ROOT;
+            }
+
             // Create the key
-            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, new RivetRules[0]).whenComplete(this::createKeyComplete);
+            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, rules).whenComplete(this::createKeyComplete);
         }
         catch (Exception e) {
             runOnUiThread(() -> alert(e.getMessage()));
