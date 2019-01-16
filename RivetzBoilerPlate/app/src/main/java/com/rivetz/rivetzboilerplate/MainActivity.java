@@ -30,7 +30,7 @@ public class MainActivity extends RivetWalletActivity {
     private RivetCrypto crypto;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);

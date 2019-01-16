@@ -42,7 +42,7 @@ public class MainActivity extends RivetWalletActivity {
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
@@ -131,7 +131,6 @@ public class MainActivity extends RivetWalletActivity {
     public void encrypt(View v) {
         EditText payload = findViewById(R.id.encryptText);
         crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
-        makeUnclickable(findViewById(R.id.encryptText));
         loading();
     }
 
@@ -185,6 +184,7 @@ public class MainActivity extends RivetWalletActivity {
                 runOnUiThread(() -> {
                     alert("Key already exists");
                     makeUnclickable(findViewById(R.id.createkey));
+                    makeClickable(findViewById(R.id.encrypt));
                     notLoading();
                 });
             }

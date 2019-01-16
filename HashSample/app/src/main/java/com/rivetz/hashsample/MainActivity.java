@@ -32,7 +32,7 @@ public class MainActivity extends RivetWalletActivity {
     private Button hashButton;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity
         super.onCreate(savedInstanceState);

@@ -38,7 +38,7 @@ public class MainActivity extends RivetWalletActivity {
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
@@ -117,8 +117,7 @@ public class MainActivity extends RivetWalletActivity {
             alert("Paired");
 
             // Check if DRT is supported
-            RivetAndroid rivet = (RivetAndroid)crypto;
-            rivet.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
+            getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
                     whenComplete(this::getPropertyComplete);
         } else {
             alert("Pairing error!");
@@ -202,13 +201,12 @@ public class MainActivity extends RivetWalletActivity {
     public void createKey() {
         try {
             // If DRT supported add Dual Root of Trust usage rule
-            RivetRules rules[];
+            RivetRules rules[] = null;
             if (drtSupported.equals("true")) {
                 rules = new RivetRules[1];
                 rules[0] = REQUIRE_DUAL_ROOT;
-            } else {
-                rules = new RivetRules[0];
             }
+
             // Create the key
             crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, rules).whenComplete(this::createKeyComplete);
         }
