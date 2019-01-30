@@ -3,7 +3,7 @@
  * RIVETZ CORP. CONFIDENTIAL
  *__________________________
  *
- * Copyright (c) 2018 Rivetz Corp.
+ * Copyright (c) 2018-2019 Rivetz Corp.
  * All Rights Reserved.
  *
  * All information and intellectual concepts contained herein is, and remains,
@@ -26,198 +26,230 @@ import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
-import com.rivetz.bridge.RivetAndroid;
-import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.bridge.RivetApiActivity;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 
-public class MainActivity extends RivetWalletActivity {
-    private RivetCrypto crypto;
-    private static String drtSupported;
 
-    // Creates and pairs a Rivet if necessary
+/**
+ * An example of extending the {@code RivetApiActivity}
+ *
+ * This example illustrates a single activity that uses a Rivet for some cryptography functions. By
+ * extending the {@code RivetApiActivity}, the Rivet instance will be managed properly within the
+ * lifecycle of your Activity.
+ *
+ */
+public class MainActivity extends RivetApiActivity {
+    // For some simple use cases, a "hard-coded" key name will be all an activity needs
+    private final String KEY_NAME = "MyKey";
+
+    // The startup process sets the state of these variables. When startupComplete() is
+    // called, it can evaluate each of these and set the UI accordingly.
+
+    private RivetCrypto crypto = null;  /** The instance of the crypto interface, or null on error */
+    private static boolean pairSuccess = false; /** true if the Rivet is paired */
+    private static boolean drtSupported = false; /** true if Dual Root of Trust is supported */
+    private static boolean hasKey = false; /** true if the activity key exists */
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // Starts the Rivet lifecycle with the Activity and sets the UI
+
+        // This allows the Rivet to acquire the resources it will need when
+        // pairing with the SPID
         super.onCreate(savedInstanceState);
+
+        // Standard Android startup
         setContentView(R.layout.activity_main);
-        makeUnclickable(findViewById(R.id.createKey));
-        makeUnclickable(findViewById(R.id.describe));
-        makeUnclickable(findViewById(R.id.delete));
-        makeUnclickable(findViewById(R.id.getKeyNames));
+
+        // Disable all of the UI elements that require the Rivet
+        setUiDisabled();
+
+        // If the Rivetz app is not installed, when you call pairDevice(), the user
+        // will be sent to the PlayStore to download it
+        if (!isRivetInstalled()) {
+            alertFromUiThread("Please install the Rivetz app");
+        }
+
+        // Now there will be a delay running the startup in the background. Entertain the user...
         loading();
 
-
-        // Start the pairing process
-        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
-            runOnUiThread(() -> {
-                notLoading();
-            });
-
-            if (paired != null) {
-
-                if (paired.booleanValue()) {
-                    try {
-                        crypto = getRivetCrypto();
-                        if(crypto != null) {
-                            runOnUiThread(() -> {
-                                onDevicePairing(true);
-                            });
-                        }
-                        else {
-                            runOnUiThread(() -> {
-                                onDevicePairing(false);
-                            });
-                        }
-                    }
-
-                    catch (RivetRuntimeException e) {
-                        runOnUiThread(() -> {
-                            alert(e.getError().getMessage());
-                        });
-                    }
-
-                } else  {
-                    runOnUiThread(() -> {
-                        onDevicePairing(false);
-                    });
-                }
-            } else {
-                // An exception occurred, the device is not paired
-                runOnUiThread(() -> {
-                    onDevicePairing(false);
-                });
-            }
-        });
+        // Put all of the high latency, asynchronous work on a background thread
+        new Thread(this::doStartup).start();
     }
 
     /**
-     * Called when getDeviceProperties completes
+     * Perform all of the startup actions needed on a background thread. This allows us
+     * to block on all async calls, making the flow easier to follow. The downside is
+     * handling exceptions. If the error handling for any failure is the same, a single
+     * try/catch can wrap the entire startup.
      *
-     * @param result String result of the properties call
-     * @param throwable if not null, the exception
+     * This method will set the state of the variables described below:
+     *
+     * {@code pairingSuccess} is true if the user accepted pairing.
+     * {@code crypto} is an instance of the Rivet crypto interface, or null on error
+     * {@code drtSupported} is true if Dual Root of Trust is enabled
+     * {@code hasKey} is set true if the key name defined in the activity exists
      */
-    private void getPropertyComplete(String result, Throwable throwable) {
-        if (throwable == null) {
-            drtSupported = result;
-            if (result.equals("true"))
-                runOnUiThread(() -> alert("Paired, DRT supported"));
-            else
-                runOnUiThread(() -> alert("Paired, DRT not supported"));
-            makeClickable(findViewById(R.id.createKey));
+    private void doStartup() {
+        Exception reason = null;
 
-        } else {
-            runOnUiThread(() -> alert("Failed to get DRT properties"));
-        }
-    }
-
-    public void onDevicePairing(boolean success){
-        if (success) {
-            // Check if DRT is supported
-            getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
-                    whenComplete(this::getPropertyComplete);
-        } else {
-            alert("Pairing error!");
-        }
-    }
-
-    // Check the key's existence asynchronously by generating a descriptor for it
-    // before creating it
-    public void checkKeyExistence(View v) {
+        // Pair with the SPID, block until it completes
         try {
-            crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::checkKeyExistenceComplete);
-            loading();
+            pairSuccess = pairDevice(SPID.DEVELOPER_TOOLS_SPID).get();
         }
-        catch (Exception e) {
-            alert(e.getMessage());
+        catch (ExecutionException ex) {
+            reason = ex;
         }
+        catch (InterruptedException ex) {
+            reason = ex;
+        }
+        catch (RivetRuntimeException ex) {
+            reason = ex;
+        }
+
+        if (reason != null) {
+            // The user doesn't really want to see the raw pairing error, but
+            // useful as a development sample.
+            alertFromBgThread(reason.getMessage());
+        } else if (!pairSuccess) {
+            alertFromBgThread("User declined");
+        } else {
+
+            // The Rivet is paired, get an instance of the crypto interface
+            // NOTE: This method could throw a RivetRuntimeException(), but only
+            // for not being paired, so it doesn't need a try/catch
+            crypto = getRivetCrypto();
+
+            try {
+                // Check if DRT is supported, block until it completes
+                drtSupported = crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED.toString()).get().equals("true");
+            }
+            catch (ExecutionException ex) {
+                reason = ex;
+            }
+            catch (InterruptedException ex) {
+                reason = ex;
+            }
+            catch (RivetRuntimeException ex) {
+                reason = ex;
+            }
+
+            if (reason != null) {
+                // Give the reason to the user - as stated above, for development only.
+                alertFromBgThread(reason.getMessage());
+            }
+        }
+
+        // If we have the crypto instance, check for the key
+        if (crypto != null) {
+            try {
+                List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).get();
+                if (keyNames.contains(KEY_NAME)) {
+                    hasKey = true;
+                }
+            }
+            catch (ExecutionException ex) {
+                reason = ex;
+            }
+            catch (InterruptedException ex) {
+                reason = ex;
+            }
+            catch (RivetRuntimeException ex) {
+                reason = ex;
+            }
+
+            // Ignore the reason, just say the key doesn't exist. That allows
+            // create key to be used, and that can show a reasonable TA error
+        }
+
+        // Now update the UI with the results
+        runOnUiThread(this::startupComplete);
     }
 
-    // Callback for when Key existence checking is complete
-    public void checkKeyExistenceComplete(List<String> keyNames, Throwable thrown){
-        if(thrown == null) {
-            if (keyNames.contains("MyKey")) {
-                runOnUiThread(() ->{
-                    alert("Key already exists");
-                    makeClickable(findViewById(R.id.getKeyNames));
-                    makeClickable(findViewById(R.id.delete));
-                    makeClickable(findViewById(R.id.describe));
-                    notLoading();
-                });
-            }
-            else {
-                createKey();
+    /**
+     * Called on the UI thread when all background operations are complete
+     */
+    public void startupComplete() {
+
+        // Turn off the user entertainment, startup is done
+        findViewById(R.id.loading).setVisibility(View.GONE);
+
+        // Fatal case for this sample, exit.
+        if (!pairSuccess || crypto == null) {
+            finish();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+        } else {
+
+            if (drtSupported) {
+                alertFromBgThread("DRT supported");
+            } else {
+                alertFromBgThread("DRT not supported");
             }
 
-        }
-        else{
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            setUiHasKeyState();
         }
     }
 
     // Creates a Key asynchronously
-    public void createKey() {
-        try {
-            // If DRT supported add Dual Root of Trust usage rule
-            RivetRules rules[] = null;
-            if (drtSupported.equals("true")) {
-                rules = new RivetRules[1];
-                rules[0] = REQUIRE_DUAL_ROOT;
-            }
+    public void createKey(View v) {
+        // Disable all the UI for a bit
+        setUiDisabled();
 
-            // Create the key
-            crypto.createKey("MyKey", RivetKeyTypes.NISTP256, rules).whenComplete(this::createKeyComplete);
+        // If DRT supported add Dual Root of Trust usage rule
+        RivetRules rules[] = new RivetRules[0];
+
+        if (drtSupported) {
+            rules = new RivetRules[]{REQUIRE_DUAL_ROOT};
         }
 
-        catch (Exception e){
-            runOnUiThread(() -> alert(e.getMessage()));
-        }
+        // Create the key
+        crypto.createKey(KEY_NAME, RivetKeyTypes.NISTP256, rules).whenComplete(this::createKeyComplete);
     }
 
     public void createKeyComplete(Void v, Throwable thrown){
-        if(thrown == null){
+        if (thrown == null){
+            // No exception means the key has been created
+            hasKey = true;
+
             runOnUiThread(() ->{
-                alert("Key successfully created");
-                makeClickable(findViewById(R.id.getKeyNames));
-                makeClickable(findViewById(R.id.delete));
-                makeClickable(findViewById(R.id.describe));
+                setUiHasKeyState();
             });
         }
         else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            alertFromBgThread(thrown.getMessage());
         }
-        notLoading();
     }
 
     // Deletes a key asynchronously
     public void deleteKey(View v) {
         loading();
-        try {
-            crypto.deleteKey("MyKey").whenComplete(this::deleteKeyComplete);
-        } catch (Exception e) {
-            alert(e.getMessage());
-        }
+        crypto.deleteKey(KEY_NAME).whenComplete(this::deleteKeyComplete);
     }
 
     // Callback when the key is done deleting
     public void deleteKeyComplete(Boolean b, Throwable thrown) {
         if (thrown == null) {
             runOnUiThread(() ->{
-                alert("Key successfully deleted");
+                alertFromUiThread("Key successfully deleted");
+
                 makeUnclickable(findViewById(R.id.delete));
             });
         } else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            alertFromBgThread(thrown.getMessage());
         }
+
+        // Allow user interaction
         notLoading();
     }
 
     // Gets the Keydescriptor for the Key asynchronously
     public void describe(View v) {
-        crypto.getKeyDescriptor("MyKey").whenComplete(this::describeComplete);
+        crypto.getKeyDescriptor(KEY_NAME).whenComplete(this::describeComplete);
         loading();
     }
 
@@ -225,60 +257,99 @@ public class MainActivity extends RivetWalletActivity {
     // of the now encrypted keys that were meant to be backed up
     public void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
         if (thrown == null) {
-            runOnUiThread(() ->{
-                alert("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
-            });
+            alertFromBgThread("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
         }
         else{
-                runOnUiThread(() -> alert(thrown.getMessage()));
+            alertFromBgThread(thrown.getMessage());
         }
 
+        // Allow user interaction
         notLoading();
     }
 
     // Restores the Key asynchronously after it was exported and deleted
     public void getKeyNames(View v) {
-        try {
-            crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::getKeyNamesComplete);
-            loading();
-        } catch (Exception e) {
-            alert(e.getMessage());
-        }
+        crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::getKeyNamesComplete);
+
+        // Block user interaction
+        loading();
     }
 
     // Callback for when restoring the Key is complete
     public void getKeyNamesComplete(List<String > keys, Throwable thrown) {
         if (thrown == null) {
-            runOnUiThread(() -> {
-                alert("The Keys of the NISTP256 type saved on this device are");
-                for(int i=0; i<keys.size(); i++) {
-                    alert(keys.get(i));
-                }
-            });
+
+            for(int i=0; i<keys.size(); i++) {
+                alertFromBgThread(keys.get(i));
+            }
+
         } else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            alertFromBgThread(thrown.getMessage());
         }
 
+        // Allow user interaction
         notLoading();
     }
 
+    /**
+     * Generate a UI alert from a background thread
+     *
+     * Rivet callbacks are always on a background thread, so create an Alert
+     * on the UI thread.
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromBgThread(String text) {
+        runOnUiThread(()->{
+            alertFromUiThread(text);
+        });
+    }
 
-    // Helper functions
-
-    // Creates an alert with some text
-    public void alert(String text) {
+    /**
+     * Generate a UI alert
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromUiThread(String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
-    // Makes a button unclickable
+    /**
+     * Disable all Rivet related controls while pairing
+     *
+     */
+    private void setUiDisabled() {
+        makeUnclickable(findViewById(R.id.createKey));
+        makeUnclickable(findViewById(R.id.describe));
+        makeUnclickable(findViewById(R.id.delete));
+        makeUnclickable(findViewById(R.id.getKeyNames));
+    }
+
+    /**
+     * Set UI state that depends on hasKey
+     *
+     * For this sample, the button states are binary based on the key
+     * existence. If the key doesn't exist, allow the user to create it.
+     * If the key does exist, allow the user to delete, and query.
+     */
+    private void setUiHasKeyState() {
+        // Ready to set the UI state now
+        if (hasKey) {
+            makeClickable(findViewById(R.id.getKeyNames));
+            makeClickable(findViewById(R.id.delete));
+            makeClickable(findViewById(R.id.describe));
+        } else {
+            makeClickable(findViewById(R.id.createKey));
+        }
+
+    }
     public void makeUnclickable(Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    // Makes a button clickable
     public void makeClickable(Button button){
         button.setAlpha(1f);
         button.setClickable(true);
@@ -291,6 +362,8 @@ public class MainActivity extends RivetWalletActivity {
 
     // Makes the loading animation invisible
     public void notLoading(){
-        findViewById(R.id.loading).setVisibility(View.GONE);
+        runOnUiThread(() -> {
+            findViewById(R.id.loading).setVisibility(View.GONE);
+        });
     }
 }
