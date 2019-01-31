@@ -20,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.rivetz.api.RivetCrypto;
+import com.rivetz.api.RivetErrors;
 import com.rivetz.api.RivetKeyDescriptor;
 import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRules;
@@ -75,7 +76,7 @@ public class MainActivity extends RivetApiActivity {
         }
 
         // Now there will be a delay running the startup in the background. Entertain the user...
-        loading();
+        findViewById(R.id.loading).setVisibility(View.VISIBLE);
 
         // Put all of the high latency, asynchronous work on a background thread
         new Thread(this::doStartup).start();
@@ -107,11 +108,21 @@ public class MainActivity extends RivetApiActivity {
         catch (InterruptedException ex) {
             reason = ex;
         }
-        catch (RivetRuntimeException ex) {
-            reason = ex;
-        }
 
         if (reason != null) {
+
+            // If the error is that the Rivet isn't installed, the user was sent to the PlayStore,
+            // sending this app to the background. Exit completely so the startup will find the
+            // new Rivet.
+            if (reason instanceof ExecutionException) {
+                if (reason.getCause() instanceof RivetRuntimeException) {
+                    if (((RivetRuntimeException)reason.getCause()).getError() == RivetErrors.NOT_INSTALLED) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(1);
+                    }
+                }
+            }
+
             // The user doesn't really want to see the raw pairing error, but
             // useful as a development sample.
             alertFromBgThread(reason.getMessage());
@@ -132,9 +143,6 @@ public class MainActivity extends RivetApiActivity {
                 reason = ex;
             }
             catch (InterruptedException ex) {
-                reason = ex;
-            }
-            catch (RivetRuntimeException ex) {
                 reason = ex;
             }
 
@@ -158,9 +166,6 @@ public class MainActivity extends RivetApiActivity {
             catch (InterruptedException ex) {
                 reason = ex;
             }
-            catch (RivetRuntimeException ex) {
-                reason = ex;
-            }
 
             // Ignore the reason, just say the key doesn't exist. That allows
             // create key to be used, and that can show a reasonable TA error
@@ -173,7 +178,7 @@ public class MainActivity extends RivetApiActivity {
     /**
      * Called on the UI thread when all background operations are complete
      */
-    public void startupComplete() {
+    private void startupComplete() {
 
         // Turn off the user entertainment, startup is done
         findViewById(R.id.loading).setVisibility(View.GONE);
@@ -195,67 +200,97 @@ public class MainActivity extends RivetApiActivity {
         }
     }
 
-    // Creates a Key asynchronously
+    /**
+     *  Create a Key
+     *
+     * @param v the Android View
+     */
     public void createKey(View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 
         // If DRT supported add Dual Root of Trust usage rule
-        RivetRules rules[] = new RivetRules[0];
+        RivetRules rules[] = null;
 
         if (drtSupported) {
             rules = new RivetRules[]{REQUIRE_DUAL_ROOT};
         }
 
-        // Create the key
+        // This operation completes and calls a method on the class. This helps break
+        // up the code if handling the result requires more than a few lines to process
         crypto.createKey(KEY_NAME, RivetKeyTypes.NISTP256, rules).whenComplete(this::createKeyComplete);
     }
 
-    public void createKeyComplete(Void v, Throwable thrown){
+    /**
+     * Handle completion of creating a key
+     *
+     * @param v nothing is returned.
+     * @param thrown null for success, or the error exception.
+     */
+    private void createKeyComplete(Void v, Throwable thrown){
         if (thrown == null){
             // No exception means the key has been created
             hasKey = true;
-
-            runOnUiThread(() ->{
-                setUiHasKeyState();
-            });
         }
         else {
             alertFromBgThread(thrown.getMessage());
         }
+
+        // Update the UI state
+        runOnUiThread(() ->{
+            setUiHasKeyState();
+        });
     }
 
-    // Deletes a key asynchronously
+    /**
+     * Delete a key
+     *
+     * @param v the Android View
+     */
     public void deleteKey(View v) {
-        loading();
-        crypto.deleteKey(KEY_NAME).whenComplete(this::deleteKeyComplete);
-    }
+        // Disable all the UI for a bit
+        setUiDisabled();
 
-    // Callback when the key is done deleting
-    public void deleteKeyComplete(Boolean b, Throwable thrown) {
-        if (thrown == null) {
+        // This operation completes with an inline lambda, with only a few
+        // lines of code needed.
+        crypto.deleteKey(KEY_NAME).whenComplete((wasDeleted, ex) -> {
+
+            if (ex != null) {
+                // Should show the user something more friendly, ok only for development
+                alertFromBgThread(ex.getMessage());
+            }
+            else {
+                // The key has been deleted.
+                hasKey = false;
+            }
+
+            // Update the UI state
             runOnUiThread(() ->{
-                alertFromUiThread("Key successfully deleted");
-
-                makeUnclickable(findViewById(R.id.delete));
+                setUiHasKeyState();
             });
-        } else {
-            alertFromBgThread(thrown.getMessage());
-        }
-
-        // Allow user interaction
-        notLoading();
+        });
     }
 
-    // Gets the Keydescriptor for the Key asynchronously
+    /**
+     * Get the key information
+     *
+     * @param v the Android View
+     */
     public void describe(View v) {
+        // Disable all the UI for a bit
+        setUiDisabled();
+
+        // Use a method for completion
         crypto.getKeyDescriptor(KEY_NAME).whenComplete(this::describeComplete);
-        loading();
     }
 
-    // Callback for when the backup function is complete which returns a byte array
-    // of the now encrypted keys that were meant to be backed up
-    public void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
+    /**
+     * Handle the describe key completion
+     *
+     * @param descriptor the information about the key, or null for error
+     * @param thrown null, or an exception on error
+     */
+    private void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
         if (thrown == null) {
             alertFromBgThread("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
         }
@@ -263,20 +298,22 @@ public class MainActivity extends RivetApiActivity {
             alertFromBgThread(thrown.getMessage());
         }
 
-        // Allow user interaction
-        notLoading();
+        // Update the UI state
+        runOnUiThread(() ->{
+            setUiHasKeyState();
+        });
     }
 
     // Restores the Key asynchronously after it was exported and deleted
     public void getKeyNames(View v) {
-        crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::getKeyNamesComplete);
+        // Disable all the UI for a bit
+        setUiDisabled();
 
-        // Block user interaction
-        loading();
+        crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).whenComplete(this::getKeyNamesComplete);
     }
 
     // Callback for when restoring the Key is complete
-    public void getKeyNamesComplete(List<String > keys, Throwable thrown) {
+    private void getKeyNamesComplete(List<String > keys, Throwable thrown) {
         if (thrown == null) {
 
             for(int i=0; i<keys.size(); i++) {
@@ -287,8 +324,10 @@ public class MainActivity extends RivetApiActivity {
             alertFromBgThread(thrown.getMessage());
         }
 
-        // Allow user interaction
-        notLoading();
+        // Update the UI state
+        runOnUiThread(() ->{
+            setUiHasKeyState();
+        });
     }
 
     /**
@@ -345,25 +384,14 @@ public class MainActivity extends RivetApiActivity {
         }
 
     }
-    public void makeUnclickable(Button button){
+
+    private void makeUnclickable(Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    public void makeClickable(Button button){
+    private void makeClickable(Button button){
         button.setAlpha(1f);
         button.setClickable(true);
-    }
-
-    // Shows a loading animation
-    public void loading(){
-        findViewById(R.id.loading).setVisibility(View.VISIBLE);
-    }
-
-    // Makes the loading animation invisible
-    public void notLoading(){
-        runOnUiThread(() -> {
-            findViewById(R.id.loading).setVisibility(View.GONE);
-        });
     }
 }
