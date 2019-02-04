@@ -21,15 +21,35 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.annotation.MainThread;
+import android.support.annotation.UiThread;
+import android.support.annotation.WorkerThread;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
+import com.rivetz.api.RivetRuntimeException;
+
+
+/**
+ * Splash screen displayed during startup
+ *
+ * This activity
+ */
 public class SplashActivity extends AppCompatActivity {
+    private final String TAG = SplashActivity.class.getSimpleName();
+
     private final String FIRST_RUN_KEY = "firstRun";
     private RivetedApplication ourApp;
 
+    /**
+     * Override onCreate to start pairing with the Rivet
+     *
+     * @param savedInstanceState the save instance state.
+     */
+    @MainThread
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,66 +85,126 @@ public class SplashActivity extends AppCompatActivity {
 
                 builder.create().show();
             }
+            else {
+                waitPaired();
+            }
         }
         else {
-            // Entertain the user while running the high-latency startup tasks
-            findViewById(R.id.loading).setVisibility(View.VISIBLE);
-
-            ourApp = (RivetedApplication)getApplication();
-            ourApp.isPaired().whenComplete(this::handleResult);
+            waitPaired();
         }
-
-
-    /*
-        // TODO: Set false after pairing
-        SharedPreferences.Editor prefEditor = settings.edit();
-        prefEditor.putBoolean(FIRST_RUN_KEY, false);
-        prefEditor.apply();
-    */
-
-
-
-
-
-
     }
 
+    /**
+     * Pair the app with the Rivet
+     */
+    @UiThread
+    private void waitPaired() {
+        // Entertain the user while running the high-latency startup tasks
+        findViewById(R.id.loading).setVisibility(View.VISIBLE);
+
+        ourApp = (RivetedApplication)getApplication();
+        ourApp.isPaired().whenComplete(this::handleResult);
+    }
+
+    /**
+     * Handle the pairing result
+     *
+     * @param result true if user acccepted, false if rejected, or null on error
+     * @param ex null for success, or an exception on error
+     */
+    @WorkerThread
     private void handleResult(Boolean result, Throwable ex) {
 
         if (ex == null) {
-            if (result) {
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-                finish();
+            // Update the first run setting
+            SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(this);
+            SharedPreferences.Editor prefEditor = settings.edit();
+            prefEditor.putBoolean(FIRST_RUN_KEY, false);
+            prefEditor.apply();
+
+            // Now start the main activity
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
+        else {
+            // Re-throw the exception and process it according to type
+            try {
+                throw ex;
             }
-            else {
-                // User rejected
+            catch (RivetRuntimeException rrEx) {
+                notifyPairExceptions(rrEx);
+            }
+            catch (Throwable impossible) {
+                Log.e(TAG, "Unexpected exception: " + impossible.getMessage());
             }
         }
     }
 
-    private void handleResult(Boolean result) {
-        if (result) {
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        } else {
-/*
-            new AlertDialog.Builder(this).setMessage(R.string.splash_activity_error)
-                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int i) {
-                            System.exit(1);
-                        }
-                    })
-                    .setOnDismissListener(new DialogInterface.OnDismissListener() {
-                        @Override
-                        public void onDismiss(DialogInterface dialog) {
-                            System.exit(1);
-                        }
-                    })
-                    .create().show();
-*/
+    /**
+     * Handle Rivet exceptions
+     *
+     * @param reason the exception containing a {@code RivetErrors}
+     */
+    private void notifyPairExceptions(RivetRuntimeException reason) {
+        final Activity activity = this;
+
+        // Log all of them, even user_cancel seems useful to be able to track
+        Log.e(TAG, reason.getMessage());
+
+        // Start building the alert to notify the user that Pairing failed
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+                .setTitle("Not Paired");
+
+        switch (reason.getError()) {
+
+            case NOT_INSTALLED:
+                // This app is structured to check during the startup process
+                // When the user says Ok, go to the PlayStore page to install, then exit
+                // the app. Note: this case returns early to avoid the default behavior.
+                //
+                // The app could be structured to check for the app first, inform the user, call
+                // pair to allow RivetzJ to start the activity, then exit the app.
+                //
+                builder.setMessage(R.string.not_installed);
+                builder.setPositiveButton(R.string.ok, (dialog, id) -> {
+                    // Starts the activity, then we can exit
+                    ourApp.sendToPlayStore();
+
+                    android.os.Process.killProcess(android.os.Process.myPid());
+                    System.exit(1);
+                });
+
+                runOnUiThread(() -> {
+                    builder.create().show();
+                });
+                return;
+
+            case REMOTE_EXCEPTION:
+                builder.setMessage(R.string.remote_error);
+                break;
+
+            case USER_CANCELED:
+                builder.setMessage(R.string.user_cancel);
+                break;
+
+            case INTERRUPTED_EXCEPTION:
+                builder.setMessage(R.string.interrupted);
+                break;
+
+            default:
+                builder.setMessage(R.string.runtime_error);
+                break;
         }
+
+        // All of these errors are fatal, exit the app when the user says Ok
+        builder.setPositiveButton(R.string.ok, (dialog, id) -> {
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(1);
+        });
+
+        runOnUiThread(() -> {
+            builder.create().show();
+        });
     }
 }

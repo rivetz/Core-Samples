@@ -28,6 +28,8 @@ import com.rivetz.bridge.RivetApiActivity;
 import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends RivetApiActivity {
+    private final String TAG = MainActivity.class.getSimpleName();
+
     private RivetCrypto crypto;
     private Button hashButton;
 
@@ -39,51 +41,6 @@ public class MainActivity extends RivetApiActivity {
 
         setContentView(R.layout.activity_main);
         hashButton = (Button) findViewById(R.id.hash);
-
-        loading();
-
-        // Start the pairing process, then enable UI if successful
-        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
-
-            runOnUiThread(() -> {
-                notLoading();
-            });
-
-            if (paired != null) {
-
-                if (paired.booleanValue()) {
-                    crypto = getRivetCrypto();
-                    if (crypto != null) {
-                        runOnUiThread(() -> {
-                            onDevicePairing(true);
-                        });
-                    } else {
-                        runOnUiThread(() -> {
-                            onDevicePairing(false);
-                        });
-                    }
-                } else {
-                    runOnUiThread(() -> {
-                        onDevicePairing(false);
-                    });
-                }
-            } else {
-                // An exception occurred, the device is not paired
-                runOnUiThread(() -> {
-                    onDevicePairing(false);
-                });
-            }
-        });
-    }
-
-    public void onDevicePairing(boolean success) {
-        if (success) {
-            alert("Paired");
-            makeClickable(hashButton);
-        } else {
-            alert("Pairing error!");
-            makeUnclickable(hashButton);
-        }
     }
 
     // Takes the given text and hashes it using SHA256
@@ -124,15 +81,5 @@ public class MainActivity extends RivetApiActivity {
     public void makeClickable(Button button) {
         button.setAlpha(1f);
         button.setClickable(true);
-    }
-
-    // Shows a loading animation
-    public void loading() {
-        findViewById(R.id.loading).setVisibility(View.VISIBLE);
-    }
-
-    // Makes the loading animation invisible
-    public void notLoading() {
-        findViewById(R.id.loading).setVisibility(View.GONE);
     }
 }
