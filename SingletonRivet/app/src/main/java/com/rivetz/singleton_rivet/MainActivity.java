@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
@@ -24,11 +25,10 @@ import android.widget.Button;
 import com.rivetz.api.RivetHashTypes;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.internal.Utilities;
-import com.rivetz.bridge.RivetApiActivity;
 
 import java.nio.charset.StandardCharsets;
 
-public class MainActivity extends RivetApiActivity {
+public class MainActivity extends AppCompatActivity {
     private final String TAG = MainActivity.class.getSimpleName();
 
     private RivetedApplication ourApp = null;

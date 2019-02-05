@@ -77,12 +77,12 @@ public class SplashActivity extends AppCompatActivity {
                             // When the user says Ok, go to the network settings and exit the app
                             public void onClick(DialogInterface dialog, int id) {
 
-                                // Release any Rivet resources
-                                ourApp.onExit();
-
                                 Intent intent = new Intent(activity, MainActivity.class);
                                 startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
                                 finish();
+
+                                android.os.Process.killProcess(android.os.Process.myPid());
+                                System.exit(1);
                             }
                         });
 
