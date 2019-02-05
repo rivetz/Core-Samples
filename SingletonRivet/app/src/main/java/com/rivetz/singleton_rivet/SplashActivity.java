@@ -21,7 +21,6 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.support.annotation.MainThread;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.v7.app.AlertDialog;
@@ -49,7 +48,7 @@ public class SplashActivity extends AppCompatActivity {
      *
      * @param savedInstanceState the save instance state.
      */
-    @MainThread
+    @UiThread
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +76,10 @@ public class SplashActivity extends AppCompatActivity {
 
                             // When the user says Ok, go to the network settings and exit the app
                             public void onClick(DialogInterface dialog, int id) {
+
+                                // Release any Rivet resources
+                                ourApp.onExit();
+
                                 Intent intent = new Intent(activity, MainActivity.class);
                                 startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
                                 finish();
@@ -122,6 +125,9 @@ public class SplashActivity extends AppCompatActivity {
             prefEditor.putBoolean(FIRST_RUN_KEY, false);
             prefEditor.apply();
 
+            // Release any Rivet resources
+            ourApp.onExit();
+
             // Now start the main activity
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
@@ -146,11 +152,15 @@ public class SplashActivity extends AppCompatActivity {
      *
      * @param reason the exception containing a {@code RivetErrors}
      */
+    @WorkerThread
     private void notifyPairExceptions(RivetRuntimeException reason) {
         final Activity activity = this;
 
         // Log all of them, even user_cancel seems useful to be able to track
         Log.e(TAG, reason.getMessage());
+
+        // Release any Rivet resources
+        ourApp.onExit();
 
         // Start building the alert to notify the user that Pairing failed
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)

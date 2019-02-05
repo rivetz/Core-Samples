@@ -13,9 +13,10 @@
  ******************************************************************************/
 package com.rivetz.singleton_rivet;
 
-import android.app.Application;
-import android.app.RemoteInput;
-import android.support.annotation.UiThread;
+import android.support.annotation.AnyThread;
+import android.support.annotation.MainThread;
+import android.support.annotation.WorkerThread;
+import android.support.multidex.MultiDexApplication;
 import android.util.Log;
 
 import com.rivetz.api.RivetCrypto;
@@ -41,7 +42,7 @@ import java.util.concurrent.ExecutionException;
  * or as the result of some user interaction. In that case, you would create a startup method that
  * calls the doStartup() on a background thread, as is done in the onCreate() here.
  */
-public class RivetedApplication extends Application {
+public class RivetedApplication extends MultiDexApplication {
     private final String TAG = RivetedApplication.class.getSimpleName();
 
     private RivetSupportAndroidImpl rivetSupport;
@@ -53,7 +54,7 @@ public class RivetedApplication extends Application {
 
 
     @Override
-    @UiThread
+    @MainThread
     public void onCreate() {
         super.onCreate();
 
@@ -73,6 +74,7 @@ public class RivetedApplication extends Application {
     /**
      * Send the user to the PlayStore to install the Rivet app.
      */
+    @AnyThread
     public void sendToPlayStore() {
         rivetSupport.redirectToPS(getApplicationContext());
     }
@@ -82,6 +84,7 @@ public class RivetedApplication extends Application {
      *
      * @return true for paired, false if user cancelled, or an exception on error.
      */
+    @AnyThread
     public CompletableFuture<Boolean> isPaired() {
         return pairResult;
     }
@@ -91,6 +94,7 @@ public class RivetedApplication extends Application {
      *
      * @return a crypto rivet, or null if not paired
      */
+    @AnyThread
     public RivetCrypto getRivetCrypto() {
 
         try {
@@ -108,12 +112,26 @@ public class RivetedApplication extends Application {
      *
      * @return the exception thrown during pairing, or null if pairing was successful.
      */
+    @AnyThread
     public RivetRuntimeException getFailReason() {
         return failReason;
     }
 
+    /**
+     * Is Dual Root of Trust supported
+     *
+     * @return true if supported, false otherwise
+     */
+    @AnyThread
     public boolean isDrtSupported() {
         return drtSupported;
+    }
+
+    /**
+     * This needs to be called when exiting the app to clean up the service connection
+     */
+    public void onExit() {
+        rivetSupport.unpairDevice();
     }
 
     /**
@@ -129,7 +147,10 @@ public class RivetedApplication extends Application {
      * {@code drtSupported} is true if Dual Root of Trust is enabled
      * {@code hasKey} is set true if the key name defined in the activity exists
      */
+    @WorkerThread
     private void doStartup() {
+        Log.i(TAG, "App startup, call pairDevice()");
+
         // Pair with the SPID, block until it completes. All exceptions are mapped into one of the
         // RivetErrors, so decoding is easier than dealing with different exception types.
         try {
@@ -158,6 +179,8 @@ public class RivetedApplication extends Application {
 
         // Terminate early on error, with failReason holding the  first cause
         if (failReason != null) {
+            Log.i(TAG, "Failed to pair: " + failReason.getMessage());
+
             pairResult.completeExceptionally(failReason);
             return;
         }
