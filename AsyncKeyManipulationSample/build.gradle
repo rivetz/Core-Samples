@@ -16,11 +16,14 @@ buildscript {
 
 allprojects {
     repositories {
-        mavenLocal()    // For SNAPSHOT builds of RivetzJ
         google()
         jcenter()
+
         maven {
             url "https://s3-us-west-2.amazonaws.com/maven.rivetz.com/release"
+        }
+        maven {
+            url "https://s3-us-west-2.amazonaws.com/maven.rivetz.com/snapshots"
         }
     }
 }
