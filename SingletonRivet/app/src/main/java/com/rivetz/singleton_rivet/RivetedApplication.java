@@ -165,9 +165,7 @@ public class RivetedApplication extends MultiDexApplication {
                 failReason = rrEx;
             }
             catch (Throwable th) {
-                // *** hack *** TODO: Create a new error for unexpected exceptions
-//            failReason = new RivetRuntimeException(RivetErrors.UNEXPECTED_EXCEPTION);
-                failReason = new RivetRuntimeException(RivetErrors.NONE);
+                failReason = new RivetRuntimeException(RivetErrors.UNEXPECTED_EXCEPTION);
             }
         }
         catch (RivetRuntimeException rrEx) {
@@ -194,6 +192,7 @@ public class RivetedApplication extends MultiDexApplication {
         }
 
         // The Rivet is paired, get an instance of the crypto interface
+        //
         // NOTE: This method could throw a RivetRuntimeException(), but only
         // for not being paired, so it doesn't need a try/catch
         crypto = getRivetCrypto();
@@ -208,9 +207,7 @@ public class RivetedApplication extends MultiDexApplication {
         catch (Throwable ex) {
             // Anything that hasn't been mapped into a Rivet exception is a runtime excption such
             // as out of memory.
-            // *** hack *** TODO: Create a new error for unexpected exceptions
-//            failReason = new RivetRuntimeException(RivetErrors.UNEXPECTED_EXCEPTION);
-            failReason = new RivetRuntimeException(RivetErrors.NONE);
+            failReason = new RivetRuntimeException(RivetErrors.UNEXPECTED_EXCEPTION);
         }
 
         // Terminate early on error, getting DRT support can't fail with the Rivet is working properly

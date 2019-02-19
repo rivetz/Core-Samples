@@ -35,7 +35,9 @@ import com.rivetz.api.RivetRuntimeException;
 /**
  * Splash screen displayed during startup
  *
- * This activity
+ * This activity handles the rivet startup, notifying the user if the Rivetz app isn't
+ * installed, or networking isn't available. If everything is Ok, it starts the pairing
+ * process. When paired, it starts the main activity.
  */
 public class SplashActivity extends AppCompatActivity {
     private final String TAG = SplashActivity.class.getSimpleName();
