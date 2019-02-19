@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">SingletonRivet</string>
+    <string name="network_err_msg">The first run of this application requires the internet. The internet will also be required for some operations on subsuquent runs.</string>
+    <string name="network_err_title">Network Error</string>
+    <string name="ok">Ok</string>
+    <string name="user_cancel">User declined to pair</string>
+    <string name="not_installed">This application requires installing the Rivet app first.</string>
+    <string name="remote_error">There was a problem with the Core Service in the Rivet app, causing a RemoteException.</string>
+    <string name="interrupted">An operation in progresss with the Core Service in the Rivet app was interrupted, causing a exception.</string>
+    <string name="runtime_error">An unexpected error in the system casued an exception.</string>
+</resources>
