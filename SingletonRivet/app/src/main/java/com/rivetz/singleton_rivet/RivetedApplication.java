@@ -15,6 +15,8 @@ package com.rivetz.singleton_rivet;
 
 import android.support.annotation.AnyThread;
 import android.support.annotation.MainThread;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.support.multidex.MultiDexApplication;
 import android.util.Log;
@@ -85,7 +87,7 @@ public class RivetedApplication extends MultiDexApplication {
      * @return true for paired, false if user cancelled, or an exception on error.
      */
     @AnyThread
-    public CompletableFuture<Boolean> isPaired() {
+    public @NonNull CompletableFuture<Boolean> isPaired() {
         return pairResult;
     }
 
@@ -95,7 +97,7 @@ public class RivetedApplication extends MultiDexApplication {
      * @return a crypto rivet, or null if not paired
      */
     @AnyThread
-    public RivetCrypto getRivetCrypto() {
+    public @Nullable RivetCrypto getRivetCrypto() {
 
         try {
             return rivetSupport.getRivetCrypto();
@@ -113,7 +115,7 @@ public class RivetedApplication extends MultiDexApplication {
      * @return the exception thrown during pairing, or null if pairing was successful.
      */
     @AnyThread
-    public RivetRuntimeException getFailReason() {
+    public @Nullable RivetRuntimeException getFailReason() {
         return failReason;
     }
 

@@ -2,10 +2,13 @@
     <string name="app_name">SingletonRivet</string>
     <string name="network_err_msg">The first run of this application requires the internet. The internet will also be required for some operations on subsuquent runs.</string>
     <string name="network_err_title">Network Error</string>
-    <string name="ok">Ok</string>
+    <string name="ok">OK</string>
     <string name="user_cancel">User declined to pair</string>
     <string name="not_installed">This application requires installing the Rivet app first.</string>
     <string name="remote_error">There was a problem with the Core Service in the Rivet app, causing a RemoteException.</string>
     <string name="interrupted">An operation in progresss with the Core Service in the Rivet app was interrupted, causing a exception.</string>
-    <string name="runtime_error">An unexpected error in the system casued an exception.</string>
+    <string name="runtime_error">An unexpected error in the system caused an exception.</string>
+    <string name="result_hint">Try the word “Rivetz”. Its hash should be 24D3068BC52DD64D18A12E950AD7AB763FEA7CE086C50C8A1967AE0393BD8C7D</string>
+    <string name="hash_data">Data to be hashed</string>
+    <string name="hash">Hash</string>
 </resources>

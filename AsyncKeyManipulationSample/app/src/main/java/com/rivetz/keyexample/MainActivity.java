@@ -12,9 +12,10 @@
  * forbidden unless prior written permission is obtained from Rivetz Corp.
  ******************************************************************************/
 
-package com.rivetz.rivetsample5;
+package com.rivetz.keyexample;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
@@ -28,6 +29,7 @@ import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
+import com.rivetz.rivetsample5.R;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +59,7 @@ public class MainActivity extends RivetApiActivity {
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@NonNull Bundle savedInstanceState) {
 
         // This allows the Rivet to acquire the resources it will need when
         // pairing with the SPID
@@ -205,7 +207,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param v the Android View
      */
-    public void createKey(View v) {
+    public void createKey(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 
@@ -247,7 +249,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param v the Android View
      */
-    public void deleteKey(View v) {
+    public void deleteKey(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 
@@ -276,7 +278,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param v the Android View
      */
-    public void describe(View v) {
+    public void describe(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 
@@ -305,7 +307,7 @@ public class MainActivity extends RivetApiActivity {
     }
 
     // Restores the Key asynchronously after it was exported and deleted
-    public void getKeyNames(View v) {
+    public void getKeyNames(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 

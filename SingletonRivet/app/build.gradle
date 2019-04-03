@@ -18,7 +18,16 @@ android {
         lintOptions {
             // Don't warn about being able to index this app.
             disable 'GoogleAppIndexingWarning'
+
+            checkAllWarnings true
+            warningsAsErrors true
+            abortOnError true
         }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     buildTypes {
@@ -28,9 +37,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
+        debug {
+            minifyEnabled false
         }
     }
 }

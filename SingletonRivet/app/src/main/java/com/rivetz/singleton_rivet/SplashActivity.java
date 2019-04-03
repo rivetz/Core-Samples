@@ -15,12 +15,12 @@ package com.rivetz.singleton_rivet;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.v7.app.AlertDialog;
@@ -52,7 +52,7 @@ public class SplashActivity extends AppCompatActivity {
      */
     @UiThread
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@NonNull Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_splash);
@@ -71,21 +71,17 @@ public class SplashActivity extends AppCompatActivity {
             if(cm == null || cm.getActiveNetworkInfo() == null) {
                 final AppCompatActivity activity = this;
 
+                // When the user says Ok, go to the network settings and exit the app
                 AlertDialog.Builder builder = new AlertDialog.Builder(activity)
                         .setMessage(R.string.network_err_msg)
                         .setTitle(R.string.network_err_title)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        .setPositiveButton(R.string.ok, (dialog, id) -> {
 
-                            // When the user says Ok, go to the network settings and exit the app
-                            public void onClick(DialogInterface dialog, int id) {
+                            startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                            finish();
 
-                                Intent intent = new Intent(activity, MainActivity.class);
-                                startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
-                                finish();
-
-                                android.os.Process.killProcess(android.os.Process.myPid());
-                                System.exit(1);
-                            }
+                            android.os.Process.killProcess(android.os.Process.myPid());
+                            System.exit(1);
                         });
 
                 builder.create().show();
@@ -118,6 +114,7 @@ public class SplashActivity extends AppCompatActivity {
      * @param ex null for success, or an exception on error
      */
     @WorkerThread
+    @SuppressWarnings("unused")
     private void handleResult(Boolean result, Throwable ex) {
 
         if (ex == null) {
@@ -187,9 +184,7 @@ public class SplashActivity extends AppCompatActivity {
                     System.exit(1);
                 });
 
-                runOnUiThread(() -> {
-                    builder.create().show();
-                });
+                runOnUiThread(() -> builder.create().show());
                 return;
 
             case REMOTE_EXCEPTION:
@@ -215,8 +210,6 @@ public class SplashActivity extends AppCompatActivity {
                 System.exit(1);
         });
 
-        runOnUiThread(() -> {
-            builder.create().show();
-        });
+        runOnUiThread(() -> builder.create().show());
     }
 }

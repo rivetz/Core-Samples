@@ -1,4 +1,4 @@
-package com.rivetz.rivetsample5;
+package com.rivetz.keyexample;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
