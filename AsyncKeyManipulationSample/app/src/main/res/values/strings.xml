@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">RivetSample5</string>
+    <string name="app_name">KeyExample</string>
+    <string name="create_key">Create key</string>
+    <string name="get_key_names">Get Key names</string>
+    <string name="delete_key">Delete Key</string>
+    <string name="describe_key">Describe Key</string>
 </resources>

@@ -14,6 +14,8 @@
 package com.rivetz.singleton_rivet;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.annotation.WorkerThread;
 import android.support.v7.app.AlertDialog;
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     @UiThread
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@NonNull Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity
         super.onCreate(savedInstanceState);
@@ -60,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Takes the given text and hashes it using SHA256
     @UiThread
-    public void hash(View v) {
+    public void hash(@NonNull View v) {
         EditText dataToBeHashed = findViewById(R.id.dataForHash);
 
         // Disable the UI while processing the async request
@@ -77,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
      * @param th null for success, or the error exception
      */
     @WorkerThread
-    public void hashComplete(byte[] result, Throwable th) {
+    public void hashComplete(@Nullable byte[] result, @Nullable Throwable th) {
          if (result != null) {
              // Process the result while still on the background thread
              String hashStr = Utilities.bytesToHex(result);
@@ -101,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Creates an alert with some text
     @UiThread
-    public void alert(String text) {
+    public void alert(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
@@ -109,14 +111,14 @@ public class MainActivity extends AppCompatActivity {
 
     // Makes a button unclickable
     @UiThread
-    public void makeUnclickable(Button button) {
+    public void makeUnclickable(@NonNull Button button) {
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
     // Makes a button clickable
     @UiThread
-    public void makeClickable(Button button) {
+    public void makeClickable(@NonNull Button button) {
         button.setAlpha(1f);
         button.setClickable(true);
     }

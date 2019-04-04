@@ -1,4 +1,4 @@
-package com.rivetz.rivetsample5;
+package com.rivetz.keyexample;
 
 import org.junit.Test;
 
