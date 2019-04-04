@@ -1,17 +1,3 @@
-/*******************************************************************************
- *
- * RIVETZ CORP. CONFIDENTIAL
- *__________________________
- *
- * Copyright (c) 2018-2019 Rivetz Corp.
- * All Rights Reserved.
- *
- * All information and intellectual concepts contained herein is, and remains,
- * the property of Rivetz Corp and its suppliers, if any.  Dissemination of this
- * information or reproduction of this material, or any facsimile, is strictly
- * forbidden unless prior written permission is obtained from Rivetz Corp.
- ******************************************************************************/
-
 package com.rivetz.keyexample;
 
 import android.os.Bundle;
@@ -29,7 +15,6 @@ import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
-import com.rivetz.rivetsample5.R;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;

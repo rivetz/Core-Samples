@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.rivetz.rivetsample5", appContext.getPackageName());
+        assertEquals("com.rivetz.keyexample", appContext.getPackageName());
     }
 }
