@@ -42,11 +42,11 @@ import com.rivetz.api.RivetHashTypes;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.SPID;
 import com.rivetz.api.internal.Utilities;
-import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.bridge.RivetApiActivity;
 
 import java.nio.charset.StandardCharsets;
 
-public class MainActivity extends RivetWalletActivity {
+public class MainActivity extends RivetApiActivity {
     private RivetCrypto crypto;
     private Button hashButton;
 

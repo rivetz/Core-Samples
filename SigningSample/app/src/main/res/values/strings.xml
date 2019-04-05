@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">SigningSample</string>
+    <string name="create_key">Create Key</string>
+    <string name="verify">Check the Authencity</string>
+    <string name="sign">Sign the Real Message</string>
+    <string name="real">Real Message</string>
+    <string name="fake">Fake Message</string>
+
 </resources>

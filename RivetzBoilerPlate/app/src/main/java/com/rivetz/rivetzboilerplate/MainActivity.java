@@ -38,9 +38,9 @@ import android.support.annotation.NonNull;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
-import com.rivetz.bridge.RivetWalletActivity;
+import com.rivetz.bridge.RivetApiActivity;
 
-public class MainActivity extends RivetWalletActivity {
+public class MainActivity extends RivetApiActivity {
     private RivetCrypto crypto;
 
     @Override
