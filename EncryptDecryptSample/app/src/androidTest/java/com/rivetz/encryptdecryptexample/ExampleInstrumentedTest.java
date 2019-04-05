@@ -1,4 +1,4 @@
-package com.rivetz.r_app2;
+package com.rivetz.encryptdecryptexample;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.rivetz.r_app2", appContext.getPackageName());
+        assertEquals("com.rivetz.encryptdecryptexample", appContext.getPackageName());
     }
 }

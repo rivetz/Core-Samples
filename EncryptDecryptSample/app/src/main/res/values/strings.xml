@@ -1,3 +1,9 @@
 <resources>
-    <string name="app_name">R_APP2</string>
+    <string name="app_name">EncryptDecryptExample</string>
+    <string name="create_key">Create Key</string>
+    <string name="encrypt">Encrypt</string>
+    <string name="decrypt">Decrypt</string>
+    <string name="text_enter">Enter Text here</string>
+
+
 </resources>
