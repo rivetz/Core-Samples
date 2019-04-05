@@ -106,20 +106,20 @@ public class MainActivity extends RivetWalletActivity {
     // Helper functions
 
     // Creates an alert with some text
-    public void alert(String text) {
+    public void alert(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
     // Makes a button unclickable
-    public void makeUnclickable(Button button){
+    public void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
     // Makes a button clickable
-    public void makeClickable(Button button){
+    public void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }

@@ -33,6 +33,7 @@ package com.rivetz.keyexample;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
@@ -245,7 +246,7 @@ public class MainActivity extends RivetApiActivity {
      * @param v nothing is returned.
      * @param thrown null for success, or the error exception.
      */
-    private void createKeyComplete(Void v, Throwable thrown){
+    private void createKeyComplete(Void v, @Nullable Throwable thrown){
         if (thrown == null){
             // No exception means the key has been created
             hasKey = true;
@@ -308,7 +309,7 @@ public class MainActivity extends RivetApiActivity {
      * @param descriptor the information about the key, or null for error
      * @param thrown null, or an exception on error
      */
-    private void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
+    private void describeComplete(@Nullable RivetKeyDescriptor descriptor, @Nullable Throwable thrown) {
         if (thrown == null) {
             alertFromBgThread("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
         }
@@ -331,7 +332,7 @@ public class MainActivity extends RivetApiActivity {
     }
 
     // Callback for when restoring the Key is complete
-    private void getKeyNamesComplete(List<String > keys, Throwable thrown) {
+    private void getKeyNamesComplete(@Nullable List<String > keys, @Nullable Throwable thrown) {
         if (thrown == null) {
 
             for(int i=0; i<keys.size(); i++) {
@@ -356,7 +357,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param text the message to be shown to the user
      */
-    private void alertFromBgThread(String text) {
+    private void alertFromBgThread(@NonNull String text) {
         runOnUiThread(()->{
             alertFromUiThread(text);
         });
@@ -367,7 +368,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param text the message to be shown to the user
      */
-    private void alertFromUiThread(String text) {
+    private void alertFromUiThread(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
@@ -403,12 +404,12 @@ public class MainActivity extends RivetApiActivity {
 
     }
 
-    private void makeUnclickable(Button button){
+    private void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    private void makeClickable(Button button){
+    private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }
