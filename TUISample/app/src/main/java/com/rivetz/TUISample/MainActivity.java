@@ -1,18 +1,35 @@
-/*******************************************************************************
+/*
+ * Copyright (c) 2019 Rivetz Corp.
+ * All rights reserved.
  *
- * RIVETZ CORP. CONFIDENTIAL
- *__________________________
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * Copyright (c) 2018 Rivetz Corp.
- * All Rights Reserved.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- * All information and intellectual concepts contained herein is, and remains,
- * the property of Rivetz Corp and its suppliers, if any.  Dissemination of this
- * information or reproduction of this material, or any facsimile, is strictly
- * forbidden unless prior written permission is obtained from Rivetz Corp.
- ******************************************************************************/
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of RIVETZ CORP. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
-package com.rivetz.rivetzsample6;
+package com.rivetz.TUISample;
 
 import java.util.List;
 import android.os.Bundle;
@@ -20,6 +37,9 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.rivetz.api.EncryptResult;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.RivetKeyTypes;
@@ -28,21 +48,20 @@ import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetAndroid;
-import com.rivetz.bridge.RivetWalletActivity;
-import com.rivetz.rivetzsample6.R;
+import com.rivetz.bridge.RivetApiActivity;
+import com.rivetz.TUISample.R;
 
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 import static com.rivetz.api.RivetRules.REQUIRE_TUI_CONFIRM;
-import static com.rivetz.api.RivetRules.REQUIRE_TUI_PIN;
 
-public class MainActivity extends RivetWalletActivity {
+public class MainActivity extends RivetApiActivity {
     private RivetCrypto crypto;
     private EncryptResult encryptedText;
     private static String drtSupported;
 
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@NonNull Bundle savedInstanceState) {
 
         // Starts the Rivet lifecycle with the Activity and sets the UI
         super.onCreate(savedInstanceState);
@@ -119,7 +138,7 @@ public class MainActivity extends RivetWalletActivity {
         if (success) {
             // Check if DRT is supported
             RivetAndroid rivet = (RivetAndroid)crypto;
-            rivet.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
+            crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED.toString()).
                     whenComplete(this::getPropertyComplete);
         } else {
             alert("Pairing error!");
@@ -128,13 +147,13 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Encrypts a password using the Rivet
-    public void encrypt(View v) {
+    public void encrypt(@NonNull View v) {
         EditText payload = findViewById(R.id.encryptText);
         crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
         loading();
     }
 
-    public void encryptComplete(EncryptResult e , Throwable thrown){
+    public void encryptComplete(@Nullable EncryptResult e ,@Nullable Throwable thrown){
         if(thrown == null){
             encryptedText = e;
             runOnUiThread(() ->alert("Your text has been encrypted to " + new String(e.getCipherText())));
@@ -146,14 +165,14 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Gets the password corresponding to the place the user has entered and decrypts it
-    public void decrypt(View v) {
+    public void decrypt(@NonNull View v) {
         crypto.decrypt("EncryptKey", encryptedText).whenComplete(this::decryptComplete);
         makeUnclickable(findViewById(R.id.encryptText));
         loading();
     }
 
     // Asynchronous callback for when decrypting a password is complete
-    public void decryptComplete(byte[] decrypted, Throwable thrown) {
+    public void decryptComplete(@Nullable byte[] decrypted,@Nullable Throwable thrown) {
         if (decrypted != null) {
             runOnUiThread(() -> alert("Your text has been decrypted: " + new String(decrypted)));
             runOnUiThread(() -> makeClickable(findViewById(R.id.encryptText)));
@@ -166,7 +185,7 @@ public class MainActivity extends RivetWalletActivity {
 
     // Check the key's existence asynchronously by generating a descriptor for it
     // before creating it
-    public void checkKeyExistence(View v) {
+    public void checkKeyExistence(@NonNull View v) {
         try {
             crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).whenComplete(this::checkKeyExistenceComplete);
             loading();
@@ -177,7 +196,7 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Callback for when Key existence checking is complete
-    public void checkKeyExistenceComplete(List<String> keyNames, Throwable thrown){
+    public void checkKeyExistenceComplete(@Nullable List<String> keyNames,@Nullable Throwable thrown){
         if(thrown == null) {
             // Check if the key is in the list if key names
             if (keyNames.contains("EncryptKey")) {
@@ -219,7 +238,7 @@ public class MainActivity extends RivetWalletActivity {
     }
 
     // Callback for when Key creation is complete
-    public void createKeyComplete(Void v, Throwable thrown){
+    public void createKeyComplete(Void v,@Nullable Throwable thrown){
         if(thrown == null) {
             runOnUiThread(() -> {
                 alert("Key successfully created");
@@ -237,20 +256,20 @@ public class MainActivity extends RivetWalletActivity {
     // Helper functions
 
     // Creates an alert with some text
-    public void alert(String text) {
+    public void alert(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
     // Makes a button unclickable
-    public void makeUnclickable(Button button){
+    public void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
     // Makes a button clickable
-    public void makeClickable(Button button){
+    public void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }

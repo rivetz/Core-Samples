@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">RivetzSample6</string>
+    <string name="app_name">TUISample</string>
+    <string name="confirm">Confirm</string>
+    <string name="encrypt">Encrypt</string>
+    <string name="text">Text to be encrypted</string>
+
 </resources>
