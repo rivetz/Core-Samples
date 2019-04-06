@@ -29,7 +29,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.rivetz.encryptdecryptexample;
+package com.rivetz.encryptdecryptsample;
 
 import java.util.List;
 import android.os.Bundle;
@@ -46,12 +46,12 @@ import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
-import com.rivetz.bridge.RivetWalletActivity;
-import com.rivetz.encryptdecryptexample.R;
+import com.rivetz.bridge.RivetApiActivity;
+import com.rivetz.encryptdecryptsample.R;
 
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 
-public class MainActivity extends RivetWalletActivity {
+public class MainActivity extends RivetApiActivity {
     private RivetCrypto crypto;
     private EncryptResult encryptedText;
     private static String drtSupported;
@@ -137,7 +137,7 @@ public class MainActivity extends RivetWalletActivity {
             alert("Paired");
 
             // Check if DRT is supported
-            getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
+            crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED).
                     whenComplete(this::getPropertyComplete);
         } else {
             alert("Pairing error!");
