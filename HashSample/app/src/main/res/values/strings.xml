@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">HashSample</string>
+    <string name="hash">Hash</string>
+    <string name="hash_data">Data to be hashed</string>
+    <string name="hint">Try the word “Rivetz”. Its hash should be 24D3068BC52DD64D18A12E950AD7AB763FEA7CE086C50C8A1967AE0393BD8C7D</string>
 </resources>

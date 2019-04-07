@@ -5,7 +5,7 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
@@ -19,7 +19,7 @@
             android:layout_marginStart="95dp"
             android:layout_marginTop="120dp"
             android:onClick="hash"
-            android:text="Hash" />
+            android:text="@string/hash" />
 
     </RelativeLayout>
 
@@ -33,7 +33,7 @@
         android:isScrollContainer="false"
         android:keepScreenOn="false"
         android:minWidth="240dp"
-        android:text="Data to be hashed" />
+        android:text="@string/hash_data" />
 
     <TextView
         android:id="@+id/testvectors"
@@ -44,7 +44,7 @@
         android:isScrollContainer="false"
         android:keepScreenOn="false"
         android:minWidth="240dp"
-        android:text="Try the word 'Rivetz'. Its hash should be 24D3068BC52DD64D18A12E950AD7AB763FEA7CE086C50C8A1967AE0393BD8C7D" />
+        android:text="@string/hint" />
 
     <ProgressBar
         android:id="@+id/loading"

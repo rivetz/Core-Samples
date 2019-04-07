@@ -6,7 +6,7 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
-            android:text="Some Button" />
+            android:text="@string/button" />
 
 
     </RelativeLayout>
@@ -31,7 +31,7 @@
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
         android:ems="10"
-        android:text="Some Text" />
+        android:text="@string/text" />
 
     <ProgressBar
         android:id="@+id/loading"

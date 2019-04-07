@@ -4,12 +4,25 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        applicationId "com.rivetz.r_app2"
+        applicationId "com.rivetz.signingsample"
         minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    lintOptions {
+        disable 'GoogleAppIndexingWarning'
+
+        checkAllWarnings true
+        warningsAsErrors true
+        abortOnError true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     buildTypes {
@@ -19,14 +32,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
+        debug {
+            minifyEnabled false
         }
-    }
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
 }
 

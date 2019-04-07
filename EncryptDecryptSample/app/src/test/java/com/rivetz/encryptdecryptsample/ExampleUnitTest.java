@@ -1,4 +1,4 @@
-package com.rivetz.rivetzsample6;
+package com.rivetz.encryptdecryptsample;
 
 import org.junit.Test;
 

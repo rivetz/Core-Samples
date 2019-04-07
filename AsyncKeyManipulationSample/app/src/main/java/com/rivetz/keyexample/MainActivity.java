@@ -1,7 +1,39 @@
+/*
+ * Copyright (c) 2019 Rivetz Corp.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of RIVETZ CORP. nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package com.rivetz.keyexample;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
@@ -214,7 +246,7 @@ public class MainActivity extends RivetApiActivity {
      * @param v nothing is returned.
      * @param thrown null for success, or the error exception.
      */
-    private void createKeyComplete(Void v, Throwable thrown){
+    private void createKeyComplete(Void v, @Nullable Throwable thrown){
         if (thrown == null){
             // No exception means the key has been created
             hasKey = true;
@@ -277,7 +309,7 @@ public class MainActivity extends RivetApiActivity {
      * @param descriptor the information about the key, or null for error
      * @param thrown null, or an exception on error
      */
-    private void describeComplete(RivetKeyDescriptor descriptor, Throwable thrown) {
+    private void describeComplete(@Nullable RivetKeyDescriptor descriptor, @Nullable Throwable thrown) {
         if (thrown == null) {
             alertFromBgThread("The key " + descriptor.getName() + " is of the type " + descriptor.getKeyType());
         }
@@ -300,7 +332,7 @@ public class MainActivity extends RivetApiActivity {
     }
 
     // Callback for when restoring the Key is complete
-    private void getKeyNamesComplete(List<String > keys, Throwable thrown) {
+    private void getKeyNamesComplete(@Nullable List<String > keys, @Nullable Throwable thrown) {
         if (thrown == null) {
 
             for(int i=0; i<keys.size(); i++) {
@@ -325,7 +357,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param text the message to be shown to the user
      */
-    private void alertFromBgThread(String text) {
+    private void alertFromBgThread(@NonNull String text) {
         runOnUiThread(()->{
             alertFromUiThread(text);
         });
@@ -336,7 +368,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param text the message to be shown to the user
      */
-    private void alertFromUiThread(String text) {
+    private void alertFromUiThread(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
@@ -372,12 +404,12 @@ public class MainActivity extends RivetApiActivity {
 
     }
 
-    private void makeUnclickable(Button button){
+    private void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    private void makeClickable(Button button){
+    private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }

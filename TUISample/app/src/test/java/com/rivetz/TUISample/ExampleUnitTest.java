@@ -1,4 +1,4 @@
-package com.rivetz.r_app2;
+package com.rivetz.TUISample;
 
 import org.junit.Test;
 
