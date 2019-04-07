@@ -16,7 +16,7 @@ buildscript {
 
 allprojects {
     repositories {
-        mavenLocal()    // For SNAPS3,HOT builds of RivetzJ
+        mavenLocal()    // For SNAPSHOT builds of RivetzJ
         google()
         jcenter()
         maven {
