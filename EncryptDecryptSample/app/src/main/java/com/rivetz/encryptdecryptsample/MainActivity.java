@@ -274,7 +274,7 @@ public class MainActivity extends RivetApiActivity {
 
         // Find the text to encrypt and encrypt it
         EditText payload = findViewById(R.id.payload);
-        crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
+        crypto.encrypt(KEY_NAME, payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
 
         // Disable the encryption button
         makeUnclickable(findViewById(R.id.encrypt));
@@ -291,7 +291,7 @@ public class MainActivity extends RivetApiActivity {
             // Save the result of the encryption
             encryptedText = e;
             // Notify the user
-            alertFromBgThread("Your text has been encrypted to " + new String(e.getCipherText()));
+            alertFromBgThread("Your text has been encrypted to " + bytesToHex(e.getCipherText()));
             //Allow decryption
             runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
         }
@@ -309,7 +309,7 @@ public class MainActivity extends RivetApiActivity {
         // Disable all the UI for a bit
         setUiDisabled();
 
-        crypto.decrypt("EncryptKey", encryptedText).whenComplete(this::decryptComplete);
+        crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
 
         // Disable the decryption button
         makeUnclickable(findViewById(R.id.decrypt));
@@ -403,5 +403,19 @@ public class MainActivity extends RivetApiActivity {
     private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
+    }
+
+
+    /**
+     *Convert a byte array to hexadecimals
+     */
+    public static String bytesToHex(byte[] in) {
+        if (in == null) return "";
+        final StringBuilder sb = new StringBuilder(in.length * 2);
+        for (byte b : in) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
     }
 }

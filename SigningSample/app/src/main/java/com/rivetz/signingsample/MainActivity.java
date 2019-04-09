@@ -269,7 +269,7 @@ public class MainActivity extends RivetApiActivity {
         EditText real = findViewById(R.id.real);
         message = real.getText().toString();
 
-        crypto.sign("SigningKey", message.getBytes(StandardCharsets.UTF_8), RivetHashTypes.SHA256).whenComplete(this::signComplete);
+        crypto.sign(KEY_NAME, message.getBytes(StandardCharsets.UTF_8), RivetHashTypes.SHA256).whenComplete(this::signComplete);
         // Disable signing
         makeUnclickable(findViewById(R.id.sign));
     }
@@ -303,7 +303,7 @@ public class MainActivity extends RivetApiActivity {
             alertFromUiThread("Both messages are fake!");
         }
         else {
-            crypto.verify("SigningKey", message.getBytes(), RivetHashTypes.SHA256, signature).whenComplete(this::verifyComplete);
+            crypto.verify(KEY_NAME, message.getBytes(), RivetHashTypes.SHA256, signature).whenComplete(this::verifyComplete);
         }
     }
 

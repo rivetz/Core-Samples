@@ -282,12 +282,17 @@ public class MainActivity extends RivetApiActivity {
         // Find the text to encrypt and encrypt it
         EditText payload = findViewById(R.id.encryptText);
 
+        // Disable the encryption button
+        makeUnclickable(findViewById(R.id.encrypt));
+
         // Use TUI confirmation for encryption
         if(TUIConfirm("Encrypt this message?")) {
             crypto.encrypt(KEY_NAME, payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
         }
-        // Disable the encryption button
-        makeUnclickable(findViewById(R.id.encrypt));
+        else {
+            // Re-enable the encryption
+            makeClickable(findViewById(R.id.encrypt));
+        }
     }
 
     /**
@@ -301,8 +306,12 @@ public class MainActivity extends RivetApiActivity {
             // Save the result of the encryption
             encryptedText = e;
             // Notify the user
+
+
+
+
             //noinspection ConstantConditions
-            alertFromBgThread("Your text has been encrypted to " + new String(e.getCipherText()));
+            alertFromBgThread("Your text has been encrypted to " + bytesToHex(e.getCipherText()));
         }
         else {
             alertFromBgThread(thrown.getMessage());
@@ -323,6 +332,10 @@ public class MainActivity extends RivetApiActivity {
         // Use TUI confirmation for decryption
         if(TUIConfirm("Decrypt this message?")) {
             crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
+        }
+        else {
+            // Re-enable the decryption
+            makeClickable(findViewById(R.id.decrypt));
         }
 
         // Disable the decryption button
@@ -439,5 +452,18 @@ public class MainActivity extends RivetApiActivity {
     private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
+    }
+
+    /**
+     *Convert a byte array to hexadecimals
+     */
+    public static String bytesToHex(byte[] in) {
+        if (in == null) return "";
+        final StringBuilder sb = new StringBuilder(in.length * 2);
+        for (byte b : in) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
     }
 }
