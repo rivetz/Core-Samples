@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.rivetz.encryptdecryptsample.MainActivity">
+    tools:context=".MainActivity">
 
     <RelativeLayout
         android:layout_width="fill_parent"
@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
-            android:onClick="checkKeyExistence"
+            android:onClick="createKey"
             android:text="@string/create_key" />
 
         <Button

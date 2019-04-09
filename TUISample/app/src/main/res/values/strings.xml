@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">TUISample</string>
-    <string name="confirm">Confirm</string>
+    <string name="createKey">Create Key</string>
     <string name="encrypt">Encrypt</string>
+    <string name="decrypt">Decrypt</string>
     <string name="text">Text to be encrypted</string>
 
 </resources>
