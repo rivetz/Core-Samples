@@ -42,7 +42,6 @@ import com.rivetz.api.EncryptResult;
 import com.rivetz.api.RivetCrypto;
 import com.rivetz.api.RivetErrors;
 import com.rivetz.api.RivetKeyTypes;
-import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;

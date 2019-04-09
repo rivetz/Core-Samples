@@ -51,7 +51,11 @@
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
         android:ems="10"
-        android:text="@string/text" />
+        android:text="@string/text"
+        android:labelFor="@id/encryptText"
+        android:inputType="text"
+        android:autofillHints="Data to be hashed"
+        tools:targetApi="o" />
 
     <ProgressBar
         android:id="@+id/loading"

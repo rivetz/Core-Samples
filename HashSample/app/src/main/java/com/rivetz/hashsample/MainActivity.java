@@ -58,8 +58,6 @@ import java.util.concurrent.ExecutionException;
  */
 
 public class MainActivity extends RivetApiActivity {
-    // For some simple use cases, a "hard-coded" key name will be all an activity needs
-    private final String KEY_NAME = "SampleKey";
 
     // The startup process sets the state of these variables. When startupComplete() is
     // called, it can evaluate each of these and set the UI accordingly.

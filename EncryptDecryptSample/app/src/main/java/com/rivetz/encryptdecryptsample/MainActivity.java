@@ -286,7 +286,7 @@ public class MainActivity extends RivetApiActivity {
      * @param e the result of the encryption
      * @param thrown null for success, or the error exception.
      */
-    public void encryptComplete(@Nullable EncryptResult e , @Nullable Throwable thrown){
+    private void encryptComplete(@Nullable EncryptResult e, @Nullable Throwable thrown){
         if(thrown == null){
             // Save the result of the encryption
             encryptedText = e;
@@ -322,7 +322,7 @@ public class MainActivity extends RivetApiActivity {
      *                  entered)
      * @param thrown null for success, or the error exception.
      */
-    public void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
+    private void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
         if (decrypted != null) {
            alertFromBgThread("Your text has been decrypted: " + new String(decrypted));
             runOnUiThread(() -> sethasKeyUI());

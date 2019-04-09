@@ -38,7 +38,6 @@ import android.widget.Button;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.rivetz.api.EncryptResult;
 import com.rivetz.api.RivetErrors;
 import com.rivetz.api.RivetHashTypes;
 import com.rivetz.api.RivetKeyTypes;
@@ -282,7 +281,7 @@ public class MainActivity extends RivetApiActivity {
      * @param s the signature generated
      * @param thrown null for success, or the error exception.
      */
-    public void signComplete(@Nullable Signature s, @Nullable Throwable thrown) {
+    private void signComplete(@Nullable Signature s, @Nullable Throwable thrown) {
         if (thrown == null) {
             signature = s;
             alertFromBgThread("Signing complete");
@@ -314,10 +313,9 @@ public class MainActivity extends RivetApiActivity {
      * @param validity boolean indicating whether or not the signature is real
      * @param thrown null for success, or the error exception.
      */
-    public void verifyComplete(@Nullable Boolean validity,@Nullable Throwable thrown){
+    private void verifyComplete(@Nullable Boolean validity, @Nullable Throwable thrown){
         if(thrown == null){
             if(validity){
-                EditText real = findViewById(R.id.real);
                alertFromBgThread("The message " + "'" + message + "'" + " is authentic, the other is fake!");
             }
             if(!validity){

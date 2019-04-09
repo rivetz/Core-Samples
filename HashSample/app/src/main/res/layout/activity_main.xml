@@ -33,7 +33,12 @@
         android:isScrollContainer="false"
         android:keepScreenOn="false"
         android:minWidth="240dp"
-        android:text="@string/hash_data" />
+        android:text="@string/hash_data"
+        android:labelFor="@id/dataForHash"
+        android:inputType="text"
+        android:autofillHints="Data to be hashed"
+        tools:targetApi="o" />
+
 
     <TextView
         android:id="@+id/testvectors"

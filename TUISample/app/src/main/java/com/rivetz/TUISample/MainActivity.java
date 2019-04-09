@@ -50,7 +50,6 @@ import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
-import com.rivetz.bridge.RivetAndroid;
 import com.rivetz.bridge.RivetApiActivity;
 import com.rivetz.TUISample.R;
 
@@ -175,13 +174,6 @@ public class MainActivity extends RivetApiActivity {
 
         // If we have the crypto instance, check for the key
         if (crypto != null) {
-
-            try{
-                crypto.deleteKey(KEY_NAME).get();
-            }
-            catch (Exception e){
-
-            }
             try {
                 List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).get();
                 if (keyNames.contains(KEY_NAME)) {
@@ -304,11 +296,12 @@ public class MainActivity extends RivetApiActivity {
      * @param e the result of the encryption
      * @param thrown null for success, or the error exception.
      */
-    public void encryptComplete(@Nullable EncryptResult e , @Nullable Throwable thrown){
+    private void encryptComplete(@Nullable EncryptResult e, @Nullable Throwable thrown){
         if(thrown == null){
             // Save the result of the encryption
             encryptedText = e;
             // Notify the user
+            //noinspection ConstantConditions
             alertFromBgThread("Your text has been encrypted to " + new String(e.getCipherText()));
         }
         else {
@@ -343,12 +336,13 @@ public class MainActivity extends RivetApiActivity {
      *                  entered)
      * @param thrown null for success, or the error exception.
      */
-    public void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
+    private void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
         if (decrypted != null) {
             alertFromBgThread("Your text has been decrypted: " + new String(decrypted));
             runOnUiThread(() -> sethasKeyUI());
         }
         else {
+            //noinspection ConstantConditions
             alertFromBgThread(thrown.getMessage());
         }
         // Allow encryption
@@ -361,7 +355,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param message the message to be displayed on the TUI screen
      */
-    public boolean TUIConfirm(String message){
+    private boolean TUIConfirm(String message){
         boolean b;
         try{
             b = crypto.confirm(message).get();
