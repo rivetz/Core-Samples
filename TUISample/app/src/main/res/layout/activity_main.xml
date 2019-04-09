@@ -38,7 +38,7 @@
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
             android:layout_marginTop="120dp"
-            android:onClick="encrypt"
+            android:onClick="decrypt"
             android:text="@string/decrypt" />
 
     </RelativeLayout>

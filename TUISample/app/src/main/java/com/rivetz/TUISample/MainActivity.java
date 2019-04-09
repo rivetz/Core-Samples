@@ -175,6 +175,13 @@ public class MainActivity extends RivetApiActivity {
 
         // If we have the crypto instance, check for the key
         if (crypto != null) {
+
+            try{
+                crypto.deleteKey(KEY_NAME).get();
+            }
+            catch (Exception e){
+
+            }
             try {
                 List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).get();
                 if (keyNames.contains(KEY_NAME)) {
@@ -276,15 +283,17 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param v The Android View.
      */
-
     public void encrypt(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
 
         // Find the text to encrypt and encrypt it
         EditText payload = findViewById(R.id.encryptText);
-        crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
 
+        // Use TUI confirmation for encryption
+        if(TUIConfirm("Encrypt this message?")) {
+            crypto.encrypt(KEY_NAME, payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
+        }
         // Disable the encryption button
         makeUnclickable(findViewById(R.id.encrypt));
     }
@@ -301,12 +310,12 @@ public class MainActivity extends RivetApiActivity {
             encryptedText = e;
             // Notify the user
             alertFromBgThread("Your text has been encrypted to " + new String(e.getCipherText()));
-            //Allow decryption
-            runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
         }
         else {
             alertFromBgThread(thrown.getMessage());
         }
+        //Allow decryption
+        runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
     }
 
     /**
@@ -318,7 +327,10 @@ public class MainActivity extends RivetApiActivity {
         // Disable all the UI for a bit
         setUiDisabled();
 
-        crypto.decrypt("EncryptKey", encryptedText).whenComplete(this::decryptComplete);
+        // Use TUI confirmation for decryption
+        if(TUIConfirm("Decrypt this message?")) {
+            crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
+        }
 
         // Disable the decryption button
         makeUnclickable(findViewById(R.id.decrypt));
@@ -339,6 +351,27 @@ public class MainActivity extends RivetApiActivity {
         else {
             alertFromBgThread(thrown.getMessage());
         }
+        // Allow encryption
+        makeClickable(findViewById(R.id.encrypt));
+
+    }
+
+    /**
+     * Confirm an operation using the TUI
+     *
+     * @param message the message to be displayed on the TUI screen
+     */
+    public boolean TUIConfirm(String message){
+        boolean b;
+        try{
+            b = crypto.confirm(message).get();
+        }
+        catch (Exception e){
+            alertFromBgThread(e.getMessage());
+            b = false;
+        }
+
+        return b;
     }
 
     /**
