@@ -50,6 +50,7 @@ import com.rivetz.api.Signature;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -169,7 +170,7 @@ public class MainActivity extends RivetApiActivity {
         // If we have the crypto instance, check for the key
         if (crypto != null) {
             try {
-                List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).get();
+                List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.NISTP256).get();
                 if (keyNames.contains(KEY_NAME)) {
                     hasKey = true;
                 }
@@ -233,7 +234,7 @@ public class MainActivity extends RivetApiActivity {
 
         // This operation completes and calls a method on the class. This helps break
         // up the code if handling the result requires more than a few lines to process
-        crypto.createKey(KEY_NAME, RivetKeyTypes.AES256_CGM, rules).whenComplete(this::createKeyComplete);
+        crypto.createKey(KEY_NAME, RivetKeyTypes.NISTP256, rules).whenComplete(this::createKeyComplete);
     }
 
     /**
@@ -269,7 +270,7 @@ public class MainActivity extends RivetApiActivity {
         EditText real = findViewById(R.id.real);
         message = real.getText().toString();
 
-        crypto.sign("SigningKey", message.getBytes(), RivetHashTypes.SHA256).whenComplete(this::signComplete);
+        crypto.sign("SigningKey", message.getBytes(StandardCharsets.UTF_8), RivetHashTypes.SHA256).whenComplete(this::signComplete);
         // Disable signing
         makeUnclickable(findViewById(R.id.sign));
     }
