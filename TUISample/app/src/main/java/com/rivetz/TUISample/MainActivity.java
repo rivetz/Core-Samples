@@ -32,6 +32,8 @@
 package com.rivetz.TUISample;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
@@ -42,245 +44,422 @@ import android.support.annotation.Nullable;
 
 import com.rivetz.api.EncryptResult;
 import com.rivetz.api.RivetCrypto;
+import com.rivetz.api.RivetErrors;
 import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRules;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
-import com.rivetz.bridge.RivetAndroid;
 import com.rivetz.bridge.RivetApiActivity;
 import com.rivetz.TUISample.R;
 
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 import static com.rivetz.api.RivetRules.REQUIRE_TUI_CONFIRM;
-
+/**
+ * An example of extending the {@code RivetApiActivity}
+ *
+ * This example illustrates a single activity that uses a riveted key for encryption and decryption while
+ * leveraging the Rivetz TUI. By extending the {@code RivetApiActivity}, the Rivet instance will be managed properly
+ * within the lifecycle of your Activity.
+ *
+ */
 public class MainActivity extends RivetApiActivity {
-    private RivetCrypto crypto;
-    private EncryptResult encryptedText;
-    private static String drtSupported;
+    // For some simple use cases, a "hard-coded" key name will be all an activity needs
+    private final String KEY_NAME = "TUIKey";
 
+    // The startup process sets the state of these variables. When startupComplete() is
+    // called, it can evaluate each of these and set the UI accordingly.
+
+    private RivetCrypto crypto = null;  /** The instance of the crypto interface, or null on error */
+    private static boolean pairSuccess = false; /** true if the Rivet is paired */
+    private static boolean drtSupported = false; /** true if Dual Root of Trust is supported */
+    private static boolean hasKey = false; /** true if the activity key exists */
+    private EncryptResult encryptedText = null; /** The encrypted text that will be generated in this sample */
 
     @Override
     public void onCreate(@NonNull Bundle savedInstanceState) {
 
-        // Starts the Rivet lifecycle with the Activity and sets the UI
+        // This allows the Rivet to acquire the resources it will need when
+        // pairing with the SPID
         super.onCreate(savedInstanceState);
+
+        // Standard Android startup
         setContentView(R.layout.activity_main);
-        makeUnclickable(findViewById(R.id.createkey));
-        makeUnclickable(findViewById(R.id.encrypt));
-        loading();
 
-        // Start the pairing process
-        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
-            runOnUiThread(() -> {
-                notLoading();
-            });
+        // Disable all of the UI elements that require the Rivet
+        setUiDisabled();
 
-            if (paired != null) {
+        // If the Rivetz app is not installed, when you call pairDevice(), the user
+        // will be sent to the PlayStore to download it
+        if (!isRivetInstalled()) {
+            alertFromUiThread("Please install the Rivetz app");
+        }
 
-                if (paired.booleanValue()) {
+        // Now there will be a delay running the startup in the background. Entertain the user...
+        findViewById(R.id.loading).setVisibility(View.VISIBLE);
 
-                    try {
-                        crypto = getRivetCrypto();
-                        if(crypto != null) {
-                            runOnUiThread(() -> {
-                                onDevicePairing(true);
-                            });
-                        }
-                        else {
-                            runOnUiThread(() -> {
-                                onDevicePairing(false);
-                            });
-                        }
-                    }
-
-                    catch (RivetRuntimeException e) {
-                        runOnUiThread(() -> {
-                            alert(e.getError().getMessage());
-                        });
-                    }
-
-                } else  {
-                    runOnUiThread(() -> {
-                        onDevicePairing(false);
-                    });
-                }
-            } else {
-                // An exception occurred, the device is not paired
-                runOnUiThread(() -> {
-                    onDevicePairing(false);
-                });
-            }
-        });
+        // Put all of the high latency, asynchronous work on a background thread
+        new Thread(this::doStartup).start();
     }
 
     /**
-     * Called when getDeviceProperties completes
+     * Perform all of the startup actions needed on a background thread. This allows us
+     * to block on all async calls, making the flow easier to follow. The downside is
+     * handling exceptions. If the error handling for any failure is the same, a single
+     * try/catch can wrap the entire startup.
      *
-     * @param result String result of the properties call
-     * @param throwable if not null, the exception
+     * This method will set the state of the variables described below:
+     *
+     * {@code pairingSuccess} is true if the user accepted pairing.
+     * {@code crypto} is an instance of the Rivet crypto interface, or null on error
+     * {@code drtSupported} is true if Dual Root of Trust is enabled
+     * {@code hasKey} is set true if the key name defined in the activity exists
      */
-    private void getPropertyComplete(String result, Throwable throwable) {
-        if (throwable == null) {
-            drtSupported = result;
-            if (result.equals("true"))
-                runOnUiThread(() -> alert("Paired, DRT supported"));
-            else
-                runOnUiThread(() -> alert("Paired, DRT not supported"));
-            makeClickable(findViewById(R.id.createkey));
+    private void doStartup() {
+        Exception reason = null;
 
-        } else {
-            runOnUiThread(() -> alert("Failed to get DRT properties"));
-        }
-    }
-
-    public void onDevicePairing(boolean success){
-        if (success) {
-            // Check if DRT is supported
-            RivetAndroid rivet = (RivetAndroid)crypto;
-            crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED.toString()).
-                    whenComplete(this::getPropertyComplete);
-        } else {
-            alert("Pairing error!");
-        }
-        notLoading();
-    }
-
-    // Encrypts a password using the Rivet
-    public void encrypt(@NonNull View v) {
-        EditText payload = findViewById(R.id.encryptText);
-        crypto.encrypt("EncryptKey", payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
-        loading();
-    }
-
-    public void encryptComplete(@Nullable EncryptResult e ,@Nullable Throwable thrown){
-        if(thrown == null){
-            encryptedText = e;
-            runOnUiThread(() ->alert("Your text has been encrypted to " + new String(e.getCipherText())));
-            runOnUiThread(() -> notLoading());
-        }
-        else {
-            alert(thrown.getMessage());
-        }
-    }
-
-    // Gets the password corresponding to the place the user has entered and decrypts it
-    public void decrypt(@NonNull View v) {
-        crypto.decrypt("EncryptKey", encryptedText).whenComplete(this::decryptComplete);
-        makeUnclickable(findViewById(R.id.encryptText));
-        loading();
-    }
-
-    // Asynchronous callback for when decrypting a password is complete
-    public void decryptComplete(@Nullable byte[] decrypted,@Nullable Throwable thrown) {
-        if (decrypted != null) {
-            runOnUiThread(() -> alert("Your text has been decrypted: " + new String(decrypted)));
-            runOnUiThread(() -> makeClickable(findViewById(R.id.encryptText)));
-        }
-        else {
-            alert(thrown.getMessage());
-        }
-        notLoading();
-    }
-
-    // Check the key's existence asynchronously by generating a descriptor for it
-    // before creating it
-    public void checkKeyExistence(@NonNull View v) {
+        // Pair with the SPID, block until it completes
         try {
-            crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).whenComplete(this::checkKeyExistenceComplete);
-            loading();
+            pairSuccess = pairDevice(SPID.DEVELOPER_TOOLS_SPID).get();
         }
-        catch (Exception e) {
-            alert(e.getMessage());
+        catch (ExecutionException ex) {
+            reason = ex;
         }
-    }
+        catch (InterruptedException ex) {
+            reason = ex;
+        }
 
-    // Callback for when Key existence checking is complete
-    public void checkKeyExistenceComplete(@Nullable List<String> keyNames,@Nullable Throwable thrown){
-        if(thrown == null) {
-            // Check if the key is in the list if key names
-            if (keyNames.contains("EncryptKey")) {
-                runOnUiThread(() -> {
-                    alert("Key already exists");
-                    makeUnclickable(findViewById(R.id.createkey));
-                    makeClickable(findViewById(R.id.encrypt));
-                    notLoading();
-                });
+        if (reason != null) {
+
+            // If the error is that the Rivet isn't installed, the user was sent to the PlayStore,
+            // sending this app to the background. Exit completely so the startup will find the
+            // new Rivet.
+            if (reason instanceof ExecutionException) {
+                if (reason.getCause() instanceof RivetRuntimeException) {
+                    if (((RivetRuntimeException)reason.getCause()).getError() == RivetErrors.NOT_INSTALLED) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(1);
+                    }
+                }
             }
-            else {
-                createKey();
+
+            // The user doesn't really want to see the raw pairing error, but
+            // useful as a development sample.
+            alertFromBgThread(reason.getMessage());
+        } else if (!pairSuccess) {
+            alertFromBgThread("User declined");
+        } else {
+
+            // The Rivet is paired, get an instance of the crypto interface
+            // NOTE: This method could throw a RivetRuntimeException(), but only
+            // for not being paired, so it doesn't need a try/catch
+            crypto = getRivetCrypto();
+
+            try {
+                // Check if DRT is supported, block until it completes
+                drtSupported = crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED.toString()).get().equals("true");
+            }
+            catch (ExecutionException ex) {
+                reason = ex;
+            }
+            catch (InterruptedException ex) {
+                reason = ex;
+            }
+
+            if (reason != null) {
+                // Give the reason to the user - as stated above, for development only.
+                alertFromBgThread(reason.getMessage());
             }
         }
-        else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+
+        // If we have the crypto instance, check for the key
+        if (crypto != null) {
+            try {
+                List<String> keyNames = crypto.getKeyNamesOf(RivetKeyTypes.AES256_CGM).get();
+                if (keyNames.contains(KEY_NAME)) {
+                    hasKey = true;
+                }
+            }
+            catch (ExecutionException ex) {
+                reason = ex;
+            }
+            catch (InterruptedException ex) {
+                reason = ex;
+            }
+
+            // Ignore the reason, just say the key doesn't exist. That allows
+            // create key to be used, and that can show a reasonable TA error
         }
+
+        // Now update the UI with the results
+        runOnUiThread(this::startupComplete);
     }
 
-    // Create a key asynchronously
-    public void createKey() {
-        try {
-            // If DRT supported add Dual Root of Trust usage rule
-            RivetRules rules[];
-            if (drtSupported.equals("true")) {
-                rules = new RivetRules[2];
-                rules[0] = REQUIRE_DUAL_ROOT;
-                rules[1] = REQUIRE_TUI_CONFIRM;
+    /**
+     * Called on the UI thread when all background operations are complete
+     */
+    private void startupComplete() {
+
+        // Turn off the user entertainment, startup is done
+        findViewById(R.id.loading).setVisibility(View.GONE);
+
+        // Fatal case for this sample, exit.
+        if (!pairSuccess || crypto == null) {
+            finish();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+        } else {
+
+            if (drtSupported) {
+                alertFromBgThread("DRT supported");
             } else {
-                rules = new RivetRules[1];
-                rules[0] = REQUIRE_TUI_CONFIRM;
+                alertFromBgThread("DRT not supported");
             }
-            // Create the key
-            crypto.createKey("EncryptKey", RivetKeyTypes.AES256_CGM, rules).whenComplete(this::createKeyComplete);
-        }
-        catch (Exception e) {
-            runOnUiThread(() -> alert(e.getMessage()));
+
+            sethasKeyUI();
         }
     }
 
-    // Callback for when Key creation is complete
-    public void createKeyComplete(Void v,@Nullable Throwable thrown){
-        if(thrown == null) {
-            runOnUiThread(() -> {
-                alert("Key successfully created");
-                makeClickable(findViewById(R.id.encrypt));
-                makeUnclickable(findViewById(R.id.createkey));
 
-            });
+
+    /**
+     *  Create a Key
+     *
+     * @param v the Android View
+     */
+    public void createKey(@NonNull View v) {
+        // Disable all the UI for a bit
+        setUiDisabled();
+
+        // If DRT supported add Dual Root of Trust usage rule
+        RivetRules rules[] = null;
+
+        if (drtSupported) {
+            rules = new RivetRules[2];
+            rules[0] = REQUIRE_DUAL_ROOT;
+            rules[1] = REQUIRE_TUI_CONFIRM;
+        } else {
+            rules = new RivetRules[1];
+            rules[0] = REQUIRE_TUI_CONFIRM;
+        }
+
+        // This operation completes and calls a method on the class. This helps break
+        // up the code if handling the result requires more than a few lines to process
+        crypto.createKey(KEY_NAME, RivetKeyTypes.AES256_CGM, rules).whenComplete(this::createKeyComplete);
+    }
+
+    /**
+     * Handle completion of creating a key
+     *
+     * @param v nothing is returned.
+     * @param thrown null for success, or the error exception.
+     */
+    private void createKeyComplete(Void v, @Nullable Throwable thrown){
+        if (thrown == null){
+            // No exception means the key has been created
+            hasKey = true;
         }
         else {
-            runOnUiThread(() -> alert(thrown.getMessage()));
+            alertFromBgThread(thrown.getMessage());
         }
-        notLoading();
+
+        // Update the UI state
+        runOnUiThread(this::sethasKeyUI);
     }
 
-    // Helper functions
 
-    // Creates an alert with some text
-    public void alert(@NonNull String text) {
+    /**
+     * Encrypt a payload of data
+     *
+     * @param v The Android View.
+     */
+    @SuppressWarnings("unused")
+    public void encrypt(@NonNull View v) {
+        // Disable all the UI for a bit
+        setUiDisabled();
+
+        // Find the text to encrypt and encrypt it
+        EditText payload = findViewById(R.id.encryptText);
+
+        // Disable the encryption button
+        makeUnclickable(findViewById(R.id.encrypt));
+
+        // Use TUI confirmation for encryption
+        if(TUIConfirm("Encrypt this message?")) {
+            crypto.encrypt(KEY_NAME, payload.getText().toString().getBytes()).whenComplete(this::encryptComplete);
+        }
+        else {
+            // Re-enable the encryption
+            makeClickable(findViewById(R.id.encrypt));
+        }
+    }
+
+    /**
+     * Handle completion of encryption
+     *
+     * @param e the result of the encryption
+     * @param thrown null for success, or the error exception.
+     */
+    private void encryptComplete(@Nullable EncryptResult e, @Nullable Throwable thrown){
+        if(thrown == null){
+            // Save the result of the encryption
+            encryptedText = e;
+            // Notify the user
+
+
+
+
+            //noinspection ConstantConditions
+            alertFromBgThread("Your text has been encrypted to " + bytesToHex(e.getCipherText()));
+        }
+        else {
+            alertFromBgThread(thrown.getMessage());
+        }
+        //Allow decryption
+        runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
+    }
+
+    /**
+     * Decrypt the data previously encrypted
+     *
+     * @param v The Android View.
+     */
+    public void decrypt(@NonNull View v) {
+        // Disable all the UI for a bit
+        setUiDisabled();
+
+        // Use TUI confirmation for decryption
+        if(TUIConfirm("Decrypt this message?")) {
+            crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
+        }
+        else {
+            // Re-enable the decryption
+            makeClickable(findViewById(R.id.decrypt));
+        }
+
+        // Disable the decryption button
+        makeUnclickable(findViewById(R.id.decrypt));
+    }
+
+    /**
+     * Handle completion of decryption
+     *
+     * @param decrypted the result of the decryption (in this case the text the user originally
+     *                  entered)
+     * @param thrown null for success, or the error exception.
+     */
+    private void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
+        if (decrypted != null) {
+            alertFromBgThread("Your text has been decrypted: " + new String(decrypted));
+            runOnUiThread(this::sethasKeyUI);
+        }
+        else {
+            //noinspection ConstantConditions
+            alertFromBgThread(thrown.getMessage());
+        }
+        // Allow encryption
+        makeClickable(findViewById(R.id.encrypt));
+
+    }
+
+    /**
+     * Confirm an operation using the TUI
+     *
+     * @param message the message to be displayed on the TUI screen
+     */
+    private boolean TUIConfirm(String message){
+        boolean b;
+        try{
+            b = crypto.confirm(message).get();
+        }
+        catch (Exception e){
+            alertFromBgThread(e.getMessage());
+            b = false;
+        }
+
+        return b;
+    }
+
+    /**
+     * Disable all Rivet related controls while pairing
+     *
+     */
+
+    private void setUiDisabled() {
+        makeUnclickable(findViewById(R.id.createKey));
+        makeUnclickable(findViewById(R.id.decrypt));
+        makeUnclickable(findViewById(R.id.encrypt));
+    }
+
+
+    private void sethasKeyUI(){
+        if(hasKey){
+            makeClickable(findViewById(R.id.encrypt));
+            makeUnclickable(findViewById(R.id.createKey));
+        }
+        else {
+            makeClickable(findViewById(R.id.createKey));
+        }
+    }
+
+    // Helper functions used in all sample apps
+
+    /**
+     * Generate a UI alert from a background thread
+     *
+     * Rivet callbacks are always on a background thread, so create an Alert
+     * on the UI thread.
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromBgThread(@NonNull String text) {
+        runOnUiThread(()-> alertFromUiThread(text));
+    }
+
+    /**
+     * Generate a UI alert
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromUiThread(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
-    // Makes a button unclickable
-    public void makeUnclickable(@NonNull Button button){
+
+    /**
+     * Make a button unclickable
+     *
+     * @param button the button to be made clickable
+     */
+
+    private void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    // Makes a button clickable
-    public void makeClickable(@NonNull Button button){
+
+    /**
+     * Make a button clickable
+     *
+     * @param button the button to be made clickable
+     */
+
+    private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
     }
 
-    // Shows a loading animation
-    public void loading(){
-        findViewById(R.id.loading).setVisibility(View.VISIBLE);
-    }
-
-    // Makes the loading animation invisible
-    public void notLoading(){
-        findViewById(R.id.loading).setVisibility(View.GONE);
+    /**
+     *Convert a byte array to hexadecimals
+     */
+    public static @NonNull String bytesToHex(@NonNull byte[] in) {
+        final StringBuilder sb = new StringBuilder(in.length * 2);
+        for (byte b : in) {
+            sb.append(Character.forDigit((b >> 4) & 0xF, 16));
+            sb.append(Character.forDigit(b & 0xF, 16));
+        }
+        return sb.toString();
     }
 }

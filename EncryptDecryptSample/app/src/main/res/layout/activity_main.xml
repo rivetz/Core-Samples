@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.rivetz.encryptdecryptsample.MainActivity">
+    tools:context=".MainActivity">
 
     <RelativeLayout
         android:layout_width="fill_parent"
@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
             android:layout_marginStart="95dp"
-            android:onClick="checkKeyExistence"
+            android:onClick="createKey"
             android:text="@string/create_key" />
 
         <Button
@@ -50,7 +50,11 @@
         android:layout_marginEnd="20dp"
         android:layout_marginTop="10dp"
         android:ems="10"
-        android:text="@string/text_enter" />
+        android:text="@string/text_enter"
+        android:labelFor="@id/payload"
+        android:inputType="text"
+        android:autofillHints="Enter Text here"
+        tools:targetApi="o" />
 
 
     <ProgressBar

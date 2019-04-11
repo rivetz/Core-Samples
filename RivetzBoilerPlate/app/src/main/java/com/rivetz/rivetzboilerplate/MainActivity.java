@@ -31,106 +31,235 @@
 package com.rivetz.rivetzboilerplate;
 
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 import android.support.annotation.NonNull;
+import android.widget.EditText;
+
+import com.rivetz.api.EncryptResult;
 import com.rivetz.api.RivetCrypto;
+import com.rivetz.api.RivetErrors;
+import com.rivetz.api.RivetKeyTypes;
 import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
+import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
 
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+
+import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
+
+
+/**
+ * An example of extending the {@code RivetApiActivity}
+ *
+ * This is the standard boilerplate code all other apps incorporate
+ *
+ */
+
 public class MainActivity extends RivetApiActivity {
-    private RivetCrypto crypto;
+    // For some simple use cases, a "hard-coded" key name will be all an activity needs
+    private final String KEY_NAME = "SampleKey";
+
+    // The startup process sets the state of these variables. When startupComplete() is
+    // called, it can evaluate each of these and set the UI accordingly.
+
+    private RivetCrypto crypto = null;  /** The instance of the crypto interface, or null on error */
+    private static boolean pairSuccess = false; /** true if the Rivet is paired */
+    private static boolean drtSupported = false; /** true if Dual Root of Trust is supported */
 
     @Override
     public void onCreate(@NonNull Bundle savedInstanceState) {
-        // Starts the Rivet lifecycle with the Activity and sets the UI
+
+        // This allows the Rivet to acquire the resources it will need when
+        // pairing with the SPID
         super.onCreate(savedInstanceState);
+
+        // Standard Android startup
         setContentView(R.layout.activity_main);
-        loading();
 
+        // Disable all of the UI elements that require the Rivet
+        setUiDisabled();
 
-        // Start the pairing process
-        pairDevice(SPID.DEVELOPER_TOOLS_SPID).whenComplete((paired, ex) -> {
-            runOnUiThread(() -> {
-                notLoading();
-            });
+        // If the Rivetz app is not installed, when you call pairDevice(), the user
+        // will be sent to the PlayStore to download it
+        if (!isRivetInstalled()) {
+            alertFromUiThread("Please install the Rivetz app");
+        }
 
-            if (paired != null) {
+        // Now there will be a delay running the startup in the background. Entertain the user...
+        findViewById(R.id.loading).setVisibility(View.VISIBLE);
 
-                if (paired.booleanValue()) {
-                    try {
-                        crypto = getRivetCrypto();
-                        if(crypto != null) {
-                            runOnUiThread(() -> {
-                                onDevicePairing(true);
-                            });
-                        }
-                        else {
-                            runOnUiThread(() -> {
-                                onDevicePairing(false);
-                            });
-                        }
-                    }
-
-                    catch (RivetRuntimeException e) {
-                        runOnUiThread(() -> {
-                            alert(e.getError().getMessage());
-                        });
-                    }
-
-                } else  {
-                    runOnUiThread(() -> {
-                        onDevicePairing(false);
-                    });
-                }
-            } else {
-                // An exception occurred, the device is not paired
-                runOnUiThread(() -> {
-                    onDevicePairing(false);
-                });
-            }
-        });
+        // Put all of the high latency, asynchronous work on a background thread
+        new Thread(this::doStartup).start();
     }
 
-    public void onDevicePairing(boolean success){
-        if (success) {
-            alert("Paired");
+    /**
+     * Perform all of the startup actions needed on a background thread. This allows us
+     * to block on all async calls, making the flow easier to follow. The downside is
+     * handling exceptions. If the error handling for any failure is the same, a single
+     * try/catch can wrap the entire startup.
+     *
+     * This method will set the state of the variables described below:
+     *
+     * {@code pairingSuccess} is true if the user accepted pairing.
+     * {@code crypto} is an instance of the Rivet crypto interface, or null on error
+     * {@code drtSupported} is true if Dual Root of Trust is enabled
+     */
+    private void doStartup() {
+        Exception reason = null;
+
+        // Pair with the SPID, block until it completes
+        try {
+            pairSuccess = pairDevice(SPID.DEVELOPER_TOOLS_SPID).get();
+        }
+        catch (ExecutionException ex) {
+            reason = ex;
+        }
+        catch (InterruptedException ex) {
+            reason = ex;
+        }
+
+        if (reason != null) {
+
+            // If the error is that the Rivet isn't installed, the user was sent to the PlayStore,
+            // sending this app to the background. Exit completely so the startup will find the
+            // new Rivet.
+            if (reason instanceof ExecutionException) {
+                if (reason.getCause() instanceof RivetRuntimeException) {
+                    if (((RivetRuntimeException)reason.getCause()).getError() == RivetErrors.NOT_INSTALLED) {
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(1);
+                    }
+                }
+            }
+
+            // The user doesn't really want to see the raw pairing error, but
+            // useful as a development sample.
+            alertFromBgThread(reason.getMessage());
+        } else if (!pairSuccess) {
+            alertFromBgThread("User declined");
         } else {
-            alert("Pairing error!");
+
+            // The Rivet is paired, get an instance of the crypto interface
+            // NOTE: This method could throw a RivetRuntimeException(), but only
+            // for not being paired, so it doesn't need a try/catch
+            crypto = getRivetCrypto();
+
+            try {
+                // Check if DRT is supported, block until it completes
+                drtSupported = crypto.getDeviceProperty(DevicePropertyIds.DRT_SUPPORTED.toString()).get().equals("true");
+            }
+            catch (ExecutionException ex) {
+                reason = ex;
+            }
+            catch (InterruptedException ex) {
+                reason = ex;
+            }
+
+            if (reason != null) {
+                // Give the reason to the user - as stated above, for development only.
+                alertFromBgThread(reason.getMessage());
+            }
+        }
+
+
+        // Now update the UI with the results
+        runOnUiThread(this::startupComplete);
+    }
+
+    /**
+     * Called on the UI thread when all background operations are complete
+     */
+    private void startupComplete() {
+
+        // Turn off the user entertainment, startup is done
+        findViewById(R.id.loading).setVisibility(View.GONE);
+
+        // Fatal case for this sample, exit.
+        if (!pairSuccess || crypto == null) {
+            finish();
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
+        } else {
+
+            if (drtSupported) {
+                alertFromBgThread("DRT supported");
+            } else {
+                alertFromBgThread("DRT not supported");
+            }
+
+            setUI();
         }
     }
 
 
-    // Helper functions
 
-    // Creates an alert with some text
-    public void alert(@NonNull String text) {
+    /**
+     * Disable all Rivet related controls while pairing
+     *
+     */
+
+    private void setUiDisabled() {
+        makeUnclickable(findViewById(R.id.someButton));
+    }
+
+
+    private void setUI(){
+            makeClickable(findViewById(R.id.someButton));
+    }
+
+    // Helper functions used in all sample apps
+
+    /**
+     * Generate a UI alert from a background thread
+     *
+     * Rivet callbacks are always on a background thread, so create an Alert
+     * on the UI thread.
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromBgThread(@NonNull String text) {
+        runOnUiThread(()->{
+            alertFromUiThread(text);
+        });
+    }
+
+    /**
+     * Generate a UI alert
+     *
+     * @param text the message to be shown to the user
+     */
+    private void alertFromUiThread(@NonNull String text) {
         new AlertDialog.Builder(this)
                 .setMessage(text)
                 .create().show();
     }
 
-    // Makes a button unclickable
-    public void makeUnclickable(@NonNull Button button){
+
+    /**
+     * Make a button unclickable
+     *
+     * @param button the button to be made clickable
+     */
+
+    private void makeUnclickable(@NonNull Button button){
         button.setAlpha(.5f);
         button.setClickable(false);
     }
 
-    // Makes a button clickable
-    public void makeClickable(@NonNull Button button){
+
+    /**
+     * Make a button clickable
+     *
+     * @param button the button to be made clickable
+     */
+
+    private void makeClickable(@NonNull Button button){
         button.setAlpha(1f);
         button.setClickable(true);
-    }
-
-    // Shows a loading animation
-    public void loading(){
-        findViewById(R.id.loading).setVisibility(View.VISIBLE);
-    }
-
-    // Makes the loading animation invisible
-    public void notLoading(){
-        findViewById(R.id.loading).setVisibility(View.GONE);
     }
 }
