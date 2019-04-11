@@ -264,9 +264,7 @@ public class MainActivity extends RivetApiActivity {
         }
 
         // Update the UI state
-        runOnUiThread(() ->{
-            sethasKeyUI();
-        });
+        runOnUiThread(this::sethasKeyUI);
     }
 
 
@@ -275,6 +273,7 @@ public class MainActivity extends RivetApiActivity {
      *
      * @param v The Android View.
      */
+    @SuppressWarnings("unused")
     public void encrypt(@NonNull View v) {
         // Disable all the UI for a bit
         setUiDisabled();
@@ -352,7 +351,7 @@ public class MainActivity extends RivetApiActivity {
     private void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
         if (decrypted != null) {
             alertFromBgThread("Your text has been decrypted: " + new String(decrypted));
-            runOnUiThread(() -> sethasKeyUI());
+            runOnUiThread(this::sethasKeyUI);
         }
         else {
             //noinspection ConstantConditions
@@ -414,9 +413,7 @@ public class MainActivity extends RivetApiActivity {
      * @param text the message to be shown to the user
      */
     private void alertFromBgThread(@NonNull String text) {
-        runOnUiThread(()->{
-            alertFromUiThread(text);
-        });
+        runOnUiThread(()-> alertFromUiThread(text));
     }
 
     /**
@@ -457,8 +454,7 @@ public class MainActivity extends RivetApiActivity {
     /**
      *Convert a byte array to hexadecimals
      */
-    public static String bytesToHex(byte[] in) {
-        if (in == null) return "";
+    public static @NonNull String bytesToHex(@NonNull byte[] in) {
         final StringBuilder sb = new StringBuilder(in.length * 2);
         for (byte b : in) {
             sb.append(Character.forDigit((b >> 4) & 0xF, 16));
