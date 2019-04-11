@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Button;
@@ -50,7 +51,6 @@ import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
-import com.rivetz.encryptdecryptsample.R;
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 
 /**
@@ -63,6 +63,7 @@ import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
  */
 
 public class MainActivity extends RivetApiActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
     // For some simple use cases, a "hard-coded" key name will be all an activity needs
     private final String KEY_NAME = "EncryptKey";
 
@@ -71,6 +72,7 @@ public class MainActivity extends RivetApiActivity {
 
     private RivetCrypto crypto = null;  /** The instance of the crypto interface, or null on error */
     private static boolean pairSuccess = false; /** true if the Rivet is paired */
+    private Exception reason = null;
     private static boolean drtSupported = false; /** true if Dual Root of Trust is supported */
     private static boolean hasKey = false; /** true if the activity key exists */
     private EncryptResult encryptedText = null; /** The encrypted text that will be generated in this sample */
@@ -115,8 +117,6 @@ public class MainActivity extends RivetApiActivity {
      * {@code hasKey} is set true if the key name defined in the activity exists
      */
     private void doStartup() {
-        Exception reason = null;
-
         // Pair with the SPID, block until it completes
         try {
             pairSuccess = pairDevice(SPID.DEVELOPER_TOOLS_SPID).get();
@@ -204,6 +204,7 @@ public class MainActivity extends RivetApiActivity {
 
         // Fatal case for this sample, exit.
         if (!pairSuccess || crypto == null) {
+            Log.e(TAG, reason.getMessage());
             finish();
             android.os.Process.killProcess(android.os.Process.myPid());
             System.exit(1);
@@ -246,6 +247,7 @@ public class MainActivity extends RivetApiActivity {
      * @param v nothing is returned.
      * @param thrown null for success, or the error exception.
      */
+    @SuppressWarnings("unused")
     private void createKeyComplete(Void v, @Nullable Throwable thrown){
         if (thrown == null){
             // No exception means the key has been created
@@ -256,9 +258,7 @@ public class MainActivity extends RivetApiActivity {
         }
 
         // Update the UI state
-        runOnUiThread(() ->{
-            sethasKeyUI();
-        });
+        runOnUiThread(this::sethasKeyUI);
     }
 
 
@@ -287,7 +287,7 @@ public class MainActivity extends RivetApiActivity {
      * @param thrown null for success, or the error exception.
      */
     private void encryptComplete(@Nullable EncryptResult e, @Nullable Throwable thrown){
-        if(thrown == null){
+        if(e != null){
             // Save the result of the encryption
             encryptedText = e;
             // Notify the user
@@ -295,7 +295,7 @@ public class MainActivity extends RivetApiActivity {
             //Allow decryption
             runOnUiThread(() -> makeClickable(findViewById(R.id.decrypt)));
         }
-        else {
+        else if (thrown != null) {
             alertFromBgThread(thrown.getMessage());
         }
     }
@@ -325,9 +325,9 @@ public class MainActivity extends RivetApiActivity {
     private void decryptComplete(@Nullable byte[] decrypted, @Nullable Throwable thrown) {
         if (decrypted != null) {
            alertFromBgThread("Your text has been decrypted: " + new String(decrypted));
-            runOnUiThread(() -> sethasKeyUI());
+            runOnUiThread(this::sethasKeyUI);
         }
-        else {
+        else if (thrown != null) { // Actually always true, but now the compiler knows too
             alertFromBgThread(thrown.getMessage());
         }
     }
@@ -365,9 +365,7 @@ public class MainActivity extends RivetApiActivity {
      * @param text the message to be shown to the user
      */
     private void alertFromBgThread(@NonNull String text) {
-        runOnUiThread(()->{
-            alertFromUiThread(text);
-        });
+        runOnUiThread(()-> alertFromUiThread(text));
     }
 
     /**
@@ -409,8 +407,7 @@ public class MainActivity extends RivetApiActivity {
     /**
      *Convert a byte array to hexadecimals
      */
-    public static String bytesToHex(byte[] in) {
-        if (in == null) return "";
+    public static @NonNull String bytesToHex(@NonNull byte[] in) {
         final StringBuilder sb = new StringBuilder(in.length * 2);
         for (byte b : in) {
             sb.append(Character.forDigit((b >> 4) & 0xF, 16));
