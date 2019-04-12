@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TUISample</string>
+    <string name="app_name">UsageRuleTUISample</string>
     <string name="createKey">Create Key</string>
     <string name="encrypt">Encrypt</string>
     <string name="decrypt">Decrypt</string>

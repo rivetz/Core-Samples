@@ -1,8 +1,8 @@
 # Rivetz Samples
-This repository contains miscellaneous sample applications that demonstrate some of the various ways API's are used to access Rivetz Technology.  Each sample is a buildable and runnable app, with a very simple UI. It is assumed that Android Studio is being used to build and run them.
+This repository contains miscellaneous sample applications that demonstrate some of the various ways Rivetz Toolkit API's are used to access Rivetz Technology.  Each sample is a buildable and runnable app, with a very simple UI. It is assumed that Android Studio is being used to build and run them.
 
 All of the apps use the same basic pattern, and demonstrate things such as:
-- Check for existence of the _Rivet_, demonstrate how to handle if not installed.
+- Check for existence of the _Rivet_, demonstrate how to handle if it is not installed.
 - Pair the device to the _Rivetz Network_.
 - See if the device is Dual Root of Trust (DRT) capable.
 - Manage asynchronous calls into the _Rivet_.
@@ -23,6 +23,12 @@ All of the apps use the same basic pattern, and demonstrate things such as:
 
 4. __SigningSample__: Creates a NIST256 signing key in the TEE, and uses the concept of real and fake messages to demonstrate both the signing and verification of user configurable text strings.
 
-5. __AsyncKeyManipulationSample__: Crates a NIST256 key and demonstrates various key management functions with it, such as extracting and displaying key properties of name and descriptor, deleting a key, etc.
+5. __AsyncKeyManipulationSample__: Creates a NIST256 key and uses it to demonstrate various key management functions, such as fetching and displaying properties of the key, deleting a key, etc.
 
-6. __SingletonRivet__:  This is another simple hashing example, however it demonstrates accessing Rivetz functions via the Singleton class pattern.
+6. __UsageRuleTUISample__: Building on the EncryptDecryptSample described above, this app demonstrates the use of a couple of other SDK capabilities;
+
+  * Key Usage Rules - the encryption key is created with usage rules requiring a TUI confirmation for use, as well as a requirement to use Dual Roots of Trust (DRT) if DRT is supported on this device.
+  * TUI Confirm - uses the _TUIConfirm_ API to send a message to the Trusted User Interface, and interprets returned results based on the users positive or negative response to that message.
+
+
+7. __SingletonRivet__:  This is another simple hashing example, however it demonstrates accessing Rivetz functions via the Singleton class pattern.

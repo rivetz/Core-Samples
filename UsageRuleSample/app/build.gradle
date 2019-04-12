@@ -4,7 +4,7 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        applicationId "com.rivetz.TUISample"
+        applicationId "com.rivetz.UsageRuleTUISample"
         minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
