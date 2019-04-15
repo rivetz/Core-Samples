@@ -29,7 +29,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.rivetz.TUISample;
+package com.rivetz.UsageRuleTUISample;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +51,7 @@ import com.rivetz.api.RivetRuntimeException;
 import com.rivetz.api.SPID;
 import com.rivetz.bridge.DevicePropertyIds;
 import com.rivetz.bridge.RivetApiActivity;
-import com.rivetz.TUISample.R;
+import com.rivetz.UsageRuleTUISample.R;
 
 import static com.rivetz.api.RivetRules.REQUIRE_DUAL_ROOT;
 import static com.rivetz.api.RivetRules.REQUIRE_TUI_CONFIRM;
@@ -331,14 +331,13 @@ public class MainActivity extends RivetApiActivity {
         // Use TUI confirmation for decryption
         if(TUIConfirm("Decrypt this message?")) {
             crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
+            // Disable the decryption button
+            makeUnclickable(findViewById(R.id.decrypt));
         }
         else {
             // Re-enable the decryption
             makeClickable(findViewById(R.id.decrypt));
         }
-
-        // Disable the decryption button
-        makeUnclickable(findViewById(R.id.decrypt));
     }
 
     /**
