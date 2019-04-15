@@ -331,14 +331,13 @@ public class MainActivity extends RivetApiActivity {
         // Use TUI confirmation for decryption
         if(TUIConfirm("Decrypt this message?")) {
             crypto.decrypt(KEY_NAME, encryptedText).whenComplete(this::decryptComplete);
+            // Disable the decryption button
+            makeUnclickable(findViewById(R.id.decrypt));
         }
         else {
             // Re-enable the decryption
             makeClickable(findViewById(R.id.decrypt));
         }
-
-        // Disable the decryption button
-        makeUnclickable(findViewById(R.id.decrypt));
     }
 
     /**
