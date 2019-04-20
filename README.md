@@ -11,7 +11,7 @@ All of the apps use the same basic pattern, and demonstrate things such as:
 - Using the current RivetzJ API's.
 
 ### Notes
-- The current apps are written with the RivetzJ version set to 1.0.12. This is specified by setting  the _rivetzJversion_ variable in the __gradle.properties__ project file to the version you are using before building these apps.
+- The current apps are built with RivetzJ version 1.0.13. This is specified by setting  the _rivetzJversion_ variable in the __gradle.properties__ project file to the version you are using before building these apps.
 - You cannot use an emulator in the Android Studio AVD to run these samples, as each use the Trusted Execution Environment (TEE), which is not supported in any of the device emulations.  You must attach a supported physical device to your development environment in order to run these apps.  See https://rivetz.com/compatibility to check if your device is supported.
 
 ## Sample App Descriptions
